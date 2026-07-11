@@ -1,0 +1,1065 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>회의 잡기 - 프로토타입</title>
+<style>
+  :root{
+    --bg:#ffffff;
+    --text:#000000;
+    --text-2:#8E8E93;
+    --text-3:#C7C7CC;
+    --border:#E5E5EA;
+    --fill:#F2F2F7;
+    --fill-2:#E5E5EA;
+    --blue:#007AFF;
+    --blue-light:#EAF3FF;
+    --red:#FF3B30;
+    --pink-light:#FFDCDA;
+    --green:#34C759;
+    --radius:14px;
+    --safe-top:44px;
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
+  html,body{margin:0;padding:0;background:#000;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif;}
+  body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px 0;}
+
+  .phone{
+    width:390px;
+    height:844px;
+    background:var(--bg);
+    border-radius:44px;
+    box-shadow:0 20px 60px rgba(0,0,0,0.5);
+    overflow:hidden;
+    position:relative;
+    border:8px solid #111;
+  }
+  .statusbar{
+    position:absolute; top:0; left:0; right:0; height:var(--safe-top);
+    display:flex; align-items:center; justify-content:space-between;
+    padding:0 24px; font-size:15px; font-weight:600; color:var(--text);
+    z-index:500; background:transparent; pointer-events:none;
+  }
+  .statusbar .icons{display:flex; gap:5px; align-items:center;}
+  .screen-root{position:absolute; inset:0; overflow:hidden;}
+
+  /* ---------- Calendar (base layer) ---------- */
+  .calendar{
+    position:absolute; inset:0; background:var(--bg);
+    padding-top:calc(var(--safe-top) + 8px);
+    transition:filter .25s ease;
+  }
+  .calendar.dimmed{ filter:brightness(0.55); }
+  .cal-header{display:flex; align-items:center; justify-content:space-between; padding:4px 20px 0;}
+  .cal-year{display:flex; align-items:center; gap:2px; font-size:19px; color:var(--text); font-weight:400;}
+  .cal-add-btn{
+    width:38px;height:38px;border-radius:50%;background:var(--blue);
+    color:#fff;border:none;font-size:20px;display:flex;align-items:center;justify-content:center;
+    cursor:pointer;
+  }
+  .cal-month{font-size:32px; font-weight:800; padding:14px 20px 6px; color:var(--text);}
+  .cal-weekdays{display:grid; grid-template-columns:repeat(7,1fr); padding:0 12px; margin-top:6px;}
+  .cal-weekdays span{text-align:center; font-size:13px; color:var(--text-3); padding:6px 0;}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr);}
+  .cal-cell{
+    text-align:center; padding:14px 0; font-size:17px; color:var(--text); border-top:1px solid var(--border);
+    position:relative;
+  }
+  .cal-cell.dim{color:var(--text-3);}
+  .cal-cell .num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;}
+  .cal-cell.today .num{background:var(--blue); color:#fff; font-weight:600;}
+  .cal-footer{position:absolute; bottom:28px; left:0; right:0; display:flex; align-items:center; justify-content:space-between; padding:0 24px;}
+  .today-pill{background:var(--fill); color:var(--text); border:none; border-radius:20px; padding:10px 18px; font-size:15px;}
+  .role-switch{
+    position:absolute; top:6px; right:16px; font-size:11px; color:var(--blue); background:none;border:none;
+    text-decoration:underline; z-index:600; cursor:pointer;
+  }
+
+  /* ---------- Bottom Sheet / Overlay ---------- */
+  .overlay{position:absolute; inset:0; z-index:100; pointer-events:none;}
+  .overlay.active{pointer-events:auto;}
+  .sheet{
+    position:absolute; left:0; right:0; bottom:0;
+    background:var(--bg); border-radius:24px 24px 0 0;
+    box-shadow:0 -10px 30px rgba(0,0,0,0.15);
+    transform:translateY(100%);
+    transition:transform .28s cubic-bezier(.32,.72,0,1);
+    max-height:92%;
+    display:flex; flex-direction:column;
+    padding-bottom:24px;
+  }
+  .sheet.show{transform:translateY(0);}
+  .sheet-top{display:flex; align-items:center; justify-content:flex-end; padding:16px 16px 0;}
+  .sheet-close{background:none;border:none;font-size:22px;color:var(--text);cursor:pointer; padding:4px 8px;}
+  .sheet-body{padding:4px 24px 20px; overflow-y:auto; flex:1;}
+  .sheet-body h1{font-size:24px; font-weight:800; margin:6px 0 6px; line-height:1.3;}
+  .sheet-body p.desc{font-size:14px; color:var(--text-2); margin:0 0 22px;}
+  .sheet-cta{padding:0 24px;}
+  .btn-primary{
+    width:100%; background:var(--blue); color:#fff; border:none; border-radius:14px;
+    padding:16px 0; font-size:16px; font-weight:700; cursor:pointer;
+  }
+  .btn-primary:disabled{background:var(--fill-2); color:var(--text-3); cursor:default;}
+  .btn-secondary{
+    width:100%; background:none; color:var(--blue); border:none; padding:14px 0; font-size:15px; cursor:pointer;
+  }
+
+  /* ---------- Onboarding ---------- */
+  .onb-dots{display:flex; gap:6px; justify-content:center; margin:8px 0 40px;}
+  .onb-dots span{width:22px;height:6px;border-radius:3px;background:var(--fill-2);}
+  .onb-dots span.on{background:var(--text); width:28px;}
+  .onb-slide{text-align:center; padding-top:20px;}
+  .onb-slide h1{font-size:26px; font-weight:800; margin-bottom:14px;}
+  .onb-slide p{font-size:15px; color:var(--text-2); line-height:1.5;}
+
+  /* ---------- Form elements ---------- */
+  .field-label{font-size:13px; color:var(--text-2); margin:18px 0 8px; font-weight:600;}
+  .field-label:first-child{margin-top:4px;}
+  .input-box{
+    border:1px solid var(--border); border-radius:12px; padding:14px 16px; font-size:16px;
+    display:flex; align-items:center; justify-content:space-between; cursor:pointer; color:var(--text);
+    background:#fff;
+  }
+  .input-box input{border:none; outline:none; font-size:16px; width:100%; font-family:inherit; color:var(--text);}
+  .input-box input::placeholder{color:var(--text-3);}
+  .input-box.placeholder-color{color:var(--text-3);}
+  .input-box .chev{color:var(--text-3); font-size:14px;}
+  .input-row{display:flex; gap:10px; align-items:center;}
+  .input-row .input-box{flex:1;}
+  .sep{color:var(--text-3); font-size:16px;}
+
+  /* ---------- Option list (bottom sheet picker) ---------- */
+  .option-list{padding:6px 0 0;}
+  .option-item{
+    padding:18px 0; font-size:17px; color:var(--text); border-bottom:1px solid var(--border);
+    cursor:pointer;
+  }
+  .option-item:last-child{border-bottom:none;}
+  .option-item.selected{background:var(--blue-light); border-radius:10px; padding-left:12px; margin:0 -12px; padding-right:12px;}
+
+  /* ---------- Mini calendar picker ---------- */
+  .mini-cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
+  .mini-cal-head button{background:none;border:none;font-size:20px;color:var(--text);cursor:pointer;}
+  .mini-cal-head span{font-size:19px; font-weight:700;}
+  .mini-cal-grid{display:grid; grid-template-columns:repeat(7,1fr); text-align:center;}
+  .mini-cal-grid .wd{font-size:13px; color:var(--text-3); padding:8px 0;}
+  .mini-cal-grid .day{
+    padding:10px 0; font-size:16px; color:var(--text); cursor:pointer; position:relative;
+  }
+  .mini-cal-grid .day.dim{color:var(--text-3);}
+  .mini-cal-grid .day.in-range{background:var(--blue-light);}
+  .mini-cal-grid .day.range-start, .mini-cal-grid .day.range-end{
+    color:#fff;
+  }
+  .mini-cal-grid .day.range-start span, .mini-cal-grid .day.range-end span{
+    background:var(--blue); border-radius:50%; width:30px;height:30px; display:inline-flex; align-items:center; justify-content:center;
+  }
+
+  /* ---------- Attendee search ---------- */
+  .search-result{
+    display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border);
+  }
+  .search-result .info .name{font-size:16px; font-weight:600;}
+  .search-result .info .mail{font-size:13px; color:var(--text-2);}
+  .chip-group{display:flex; gap:8px;}
+  .chip{
+    border-radius:20px; padding:6px 14px; font-size:13px; border:1.5px solid var(--border); color:var(--text-2);
+    cursor:pointer; background:#fff; font-weight:600;
+  }
+  .chip.on-required{border-color:var(--blue); color:var(--blue); background:var(--blue-light);}
+  .chip.on-optional{border-color:var(--text-2); color:var(--text); background:var(--fill);}
+
+  .attendee-row{
+    display:flex; align-items:center; justify-content:space-between; padding:14px 16px; background:var(--fill);
+    border-radius:12px; margin-bottom:8px;
+  }
+  .attendee-row .name{font-size:15px; font-weight:600;}
+  .tag{font-size:12px; font-weight:700; padding:4px 10px; border-radius:8px;}
+  .tag.required{color:var(--blue); background:var(--blue-light);}
+  .tag.optional{color:var(--text-2); background:#fff; border:1px solid var(--border);}
+
+  /* ---------- Invite sent / status ---------- */
+  .link-box{
+    display:flex; align-items:center; justify-content:space-between; background:var(--fill);
+    border-radius:12px; padding:14px 16px; font-size:14px; color:var(--text-2); margin:18px 0;
+  }
+  .status-row{
+    display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--border);
+  }
+  .status-row:first-child{border-top:1px solid var(--border);}
+  .status-done{color:var(--green); font-weight:700; font-size:14px;}
+  .status-pending{color:var(--text-2); font-weight:600; font-size:14px;}
+
+  /* ---------- Recommended time cards ---------- */
+  .rec-card{
+    border:2px solid var(--border); border-radius:14px; padding:16px; margin-bottom:12px; cursor:pointer;
+  }
+  .rec-card.selected{border-color:var(--blue); background:var(--blue-light);}
+  .rec-badge{
+    display:inline-block; font-size:12px; font-weight:700; color:#fff; background:var(--blue);
+    border-radius:8px; padding:3px 10px; margin-bottom:10px;
+  }
+  .rec-badge.dim{background:var(--fill-2); color:var(--text-2);}
+  .rec-time{font-size:19px; font-weight:800; margin-bottom:4px;}
+  .rec-sub{font-size:13px; color:var(--text-2);}
+
+  /* ---------- Confirmed screen ---------- */
+  .confirm-box{text-align:center; padding:30px 0;}
+  .confirm-date{font-size:24px; font-weight:800; margin-bottom:24px; line-height:1.4;}
+  .why-box{background:var(--fill); border-radius:12px; padding:16px; text-align:left;}
+  .why-box .q{font-size:14px; font-weight:700; margin-bottom:8px;}
+  .why-box .a{font-size:13px; color:var(--text-2);}
+
+  /* ---------- Toast (push notification style) ---------- */
+  .toast{
+    position:absolute; top:52px; left:16px; right:16px; background:rgba(250,250,250,0.96);
+    backdrop-filter:blur(10px); border-radius:16px; padding:14px 16px; box-shadow:0 6px 20px rgba(0,0,0,0.15);
+    z-index:800; opacity:0; transform:translateY(-20px); transition:all .3s ease;
+  }
+  .toast.show{opacity:1; transform:translateY(0);}
+  .toast .t-title{font-size:14px; font-weight:700; margin-bottom:2px;}
+  .toast .t-body{font-size:13px; color:var(--text-2); line-height:1.4;}
+
+  /* ---------- Participant detail ---------- */
+  .meeting-hero{padding-top:8px;}
+  .meeting-hero h1{font-size:24px; font-weight:800; margin-bottom:4px;}
+  .meeting-hero .sub{font-size:13px; color:var(--text-2); margin-bottom:18px;}
+  .invited-by{
+    display:flex; align-items:center; justify-content:space-between; background:var(--fill);
+    border-radius:12px; padding:14px 16px; margin-bottom:16px;
+  }
+  .invited-by .name{font-size:15px; font-weight:700;}
+  .invited-by .sub{font-size:12px; color:var(--text-2); margin:2px 0 0;}
+  .attendee-list-box{background:var(--fill); border-radius:12px; padding:16px;}
+  .attendee-list-box .h{font-size:14px; font-weight:700; margin-bottom:10px;}
+  .attendee-list-box .p{font-size:14px; color:var(--text); padding:6px 0;}
+
+  /* ---------- Time grid ---------- */
+  .grid-wrap{margin-top:6px; -webkit-user-select:none; user-select:none;}
+  .grid-table{display:grid; grid-template-columns:34px repeat(5,1fr); gap:4px;}
+  .grid-table .h-cell{font-size:12px; color:var(--text-2); text-align:center; padding:4px 0 8px; font-weight:600;}
+  .grid-table .row-label{font-size:12px; color:var(--text-2); display:flex; align-items:center; justify-content:center;}
+  .g-cell{
+    height:26px; border-radius:5px; background:var(--fill); cursor:pointer;
+  }
+  .g-cell.locked{background:#1c1c1e; cursor:not-allowed;}
+  .g-cell.on-unavail{background:#1c1c1e;}
+  .g-cell.on-avoid{background:var(--red);}
+  .g-cell.readonly-avoid{background:var(--pink-light); cursor:not-allowed;}
+  .g-cell.on-prefer{background:var(--blue);}
+  .expand-row{text-align:center; margin-top:10px; font-size:13px; color:var(--text-2); cursor:pointer;}
+
+  .anytime-link{position:absolute; bottom:96px; left:0; right:0; text-align:center; font-size:14px; color:var(--text); text-decoration:underline; cursor:pointer;}
+
+  .summary-box{background:var(--fill); border-radius:12px; padding:16px; margin-bottom:12px;}
+  .summary-box .h{font-size:15px; font-weight:700; margin-bottom:2px;}
+  .summary-box .v{font-size:13px; color:var(--text-2);}
+
+  ::-webkit-scrollbar{display:none;}
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="statusbar">
+    <span id="clock">9:41</span>
+    <div class="icons">📶 🔋</div>
+  </div>
+  <button class="role-switch" id="roleSwitchBtn" onclick="switchRole()">참석자 화면으로 보기</button>
+
+  <div class="screen-root">
+    <div class="calendar" id="calendarLayer"></div>
+    <div class="overlay" id="overlayLayer">
+      <div class="sheet" id="sheet"></div>
+    </div>
+    <div class="toast" id="toast"></div>
+  </div>
+</div>
+
+<script>
+// ======================= MOCK DATA =======================
+const CONTACTS = [
+  {name:'김민수', email:'minsoo@company.com'},
+  {name:'김도현', email:'dohyun@company.com'},
+  {name:'김보라', email:'bora@company.com'},
+  {name:'김민정', email:'minjeong@company.com'},
+  {name:'박지민', email:'jimin@company.com'},
+  {name:'최은우', email:'eunwoo@company.com'},
+];
+
+const RECOMMEND = [
+  {rank:1, label:'목 7/16 오후 2:00 - 3:00', sub:'필수 참석자 4명 모두 가능 · 선호 3명 · 기피 1명'},
+  {rank:2, label:'수 7/15 오후 3:00 - 4:00', sub:'필수 참석자 4명 모두 가능 · 선호 2명 · 기피 1명'},
+  {rank:3, label:'금 7/17 오전 10:00 - 11:00', sub:'필수 참석자 4명 모두 가능 · 선호 2명 · 기피 2명'},
+];
+
+const DAYS = ['월','화','수','목','금'];
+const HOURS_BASE = [9,10,11,12,13,14,15,16,17,18];
+const HOURS_MORE = [19,20,21];
+
+const CAL_ROWS = [
+  [{d:28,dim:true},{d:29,dim:true},{d:30,dim:true},{d:1},{d:2},{d:3},{d:4,dim:true}],
+  [{d:5,dim:true},{d:6},{d:7},{d:8},{d:9},{d:10},{d:11,dim:true}],
+  [{d:12,today:true},{d:13},{d:14},{d:15},{d:16},{d:17},{d:18,dim:true}],
+  [{d:19,dim:true},{d:20},{d:21},{d:22},{d:23},{d:24},{d:25,dim:true}],
+  [{d:26,dim:true},{d:27},{d:28},{d:29},{d:30},{d:31},{d:1,dim:true}],
+];
+
+// ======================= STATE =======================
+function freshOrganizerState(){
+  return {
+    onboardingIndex:0,
+    title:'',
+    periodStart:null, periodEnd:null,
+    duration:'1시간',
+    deadline:'오늘 퇴근 전(~18:00)',
+    attendees:[{name:'이나연(나)', level:'required', isMe:true}],
+    search:'',
+    inviteSent:false,
+    responded:new Set(),
+    recSelected:0,
+  };
+}
+function freshGrid(){
+  const cell = {};
+  DAYS.forEach(day=>{
+    [...HOURS_BASE,...HOURS_MORE].forEach(h=>{
+      cell[day+'-'+h] = (day==='월') ? 'locked' : null;
+    });
+  });
+  return {cell, expanded:false};
+}
+function freshParticipantState(){
+  return {
+    step:'intro', // intro -> unavail -> avoid -> prefer -> summary
+    anytime:false,
+    grid: freshGrid(),
+  };
+}
+
+const state = {
+  role:'organizer',
+  overlay:null,       // current main sheet screen name
+  sub:null,           // current sub-sheet (picker) name
+  flowMode:null,      // 'demo' when auto-chained from invite send, null otherwise
+  miniCal:{start:null, end:null},
+  organizer: freshOrganizerState(),
+  participant: freshParticipantState(),
+};
+
+// ======================= HELPERS =======================
+function el(html){ const t=document.createElement('template'); t.innerHTML=html.trim(); return t.content.firstChild; }
+function fmtDate(d){ return d? `2026.07.${String(d).padStart(2,'0')}` : ''; }
+
+function showToast(title, body, after){
+  const toast = document.getElementById('toast');
+  toast.innerHTML = `<div class="t-title">${title}</div><div class="t-body">${body}</div>`;
+  toast.classList.add('show');
+  setTimeout(()=>{ toast.classList.remove('show'); if(after) after(); }, 1800);
+}
+
+function openSheet(name){ state.overlay = name; state.sub=null; render(); }
+function closeSheet(){ state.overlay = null; state.sub=null; render(); }
+function openSub(name){ state.sub = name; render(); }
+function closeSub(){ state.sub = null; render(); }
+
+function switchRole(){
+  if(state.role === 'organizer'){
+    state.role = 'participant';
+    state.flowMode = null;
+    state.participant = freshParticipantState();
+    document.getElementById('roleSwitchBtn').textContent = '주최자 화면으로 보기';
+    closeSheet();
+    showToast('미팅 생성', '나연님이 주간 싱크 회의에 초대했어요.<br>오늘 퇴근 전까지 답해주세요.', ()=>{
+      openSheet('pIntro');
+    });
+  } else {
+    state.role = 'organizer';
+    state.organizer = freshOrganizerState();
+    document.getElementById('roleSwitchBtn').textContent = '참석자 화면으로 보기';
+    closeSheet();
+  }
+}
+
+// ======================= RENDER: CALENDAR =======================
+function renderCalendar(){
+  const cal = document.getElementById('calendarLayer');
+  const rows = CAL_ROWS.map(row => row.map(c=>{
+    const cls = ['cal-cell']; if(c.dim) cls.push('dim'); if(c.today) cls.push('today');
+    return `<div class="${cls.join(' ')}"><span class="num">${c.d}</span></div>`;
+  }).join('')).join('');
+
+  cal.innerHTML = `
+    <div class="cal-header">
+      <div class="cal-year">‹ 2026</div>
+      <button class="cal-add-btn" id="addBtn">+</button>
+    </div>
+    <div class="cal-month">7월</div>
+    <div class="cal-weekdays"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
+    <div class="cal-grid">${rows}</div>
+    <div class="cal-footer">
+      <button class="today-pill">오늘</button>
+      <span style="font-size:20px;">✉️</span>
+    </div>
+  `;
+  document.getElementById('addBtn').onclick = ()=> openSheet('addMenu');
+  cal.classList.toggle('dimmed', !!state.overlay);
+}
+
+// ======================= SHEET DISPATCH =======================
+function render(){
+  renderCalendar();
+  const sheet = document.getElementById('sheet');
+  const overlayLayer = document.getElementById('overlayLayer');
+
+  if(!state.overlay){
+    sheet.classList.remove('show');
+    overlayLayer.classList.remove('active');
+    removeSub();
+    return;
+  }
+  overlayLayer.classList.add('active');
+  sheet.classList.add('show');
+
+  const screens = {
+    addMenu: renderAddMenu,
+    onboarding: renderOnboarding,
+    title: renderTitle,
+    period: renderPeriod,
+    duration: renderDuration,
+    deadline: renderDeadline,
+    attendees: renderAttendees,
+    review: renderReview,
+    sent: renderSent,
+    recommend: renderRecommend,
+    confirmed: renderConfirmed,
+    autoConfirmed: renderAutoConfirmed,
+    pIntro: renderPIntro,
+    pUnavail: ()=>renderPGrid('unavail'),
+    pAvoid: ()=>renderPGrid('avoid'),
+    pPrefer: ()=>renderPGrid('prefer'),
+    pSummary: renderPSummary,
+  };
+  (screens[state.overlay] || (()=>{}))();
+  renderSub();
+}
+
+function sheetShell(inner, opts={}){
+  return `
+    <div class="sheet-top">
+      <button class="sheet-close" onclick="${opts.onClose || 'closeSheet()'}">✕</button>
+    </div>
+    <div class="sheet-body">${inner}</div>
+    ${opts.cta ? `<div class="sheet-cta">${opts.cta}</div>` : ''}
+  `;
+}
+
+function removeSub(){
+  let s = document.getElementById('subSheetLayer');
+  if(s) s.remove();
+}
+function renderSub(){
+  removeSub();
+  document.getElementById('sheet').style.filter = '';
+  if(!state.sub) return;
+  const layer = el(`<div id="subSheetLayer" style="position:absolute;inset:0;z-index:200;"></div>`);
+  document.querySelector('.phone').appendChild(layer);
+  const sub = el(`<div class="sheet show" style="position:absolute;left:0;right:0;bottom:0;max-height:70%;"></div>`);
+  layer.appendChild(sub);
+  document.getElementById('sheet').style.filter = 'brightness(0.85)';
+
+  const subs = {
+    durationPicker: renderDurationPicker,
+    deadlinePicker: renderDeadlinePicker,
+    periodPicker: renderPeriodPicker,
+  };
+  sub.innerHTML = (subs[state.sub] || (()=>''))();
+}
+
+// ======================= 1) ADD MENU =======================
+function renderAddMenu(){
+  document.getElementById('sheet').style.maxHeight = '40%';
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <div class="option-list" style="margin-top:0;">
+      <div class="option-item" onclick="closeSheet()">일정 만들기</div>
+      <div class="option-item" onclick="closeSheet()">할 일 만들기</div>
+      <div class="option-item" style="display:flex;justify-content:space-between;align-items:center;" onclick="startOnboarding()">
+        회의 잡기 <span style="background:var(--blue-light);color:var(--blue);font-size:11px;font-weight:800;padding:3px 8px;border-radius:6px;">New</span>
+      </div>
+    </div>
+  `);
+}
+function startOnboarding(){ state.organizer.onboardingIndex = 0; openSheet('onboarding'); }
+
+// ======================= 2) ONBOARDING =======================
+const ONB_SLIDES = [
+  {h:'잡기 힘든 회의,<br>이제 쉽게 정해보세요', p:'누가 꼭 참석해야 하는지와<br>원하는 시간을 함께 고려해요.'},
+  {h:'동료들이 답하면<br>회의 시간을 찾아드려요', p:'모든 답변을 모아<br>회의하기 좋은 시간 3개를 추천해드려요.'},
+  {h:'회의 잡으러<br>가볼까요?', p:'회의를 만들고 동료에게 공유하면<br>일정 조율이 시작돼요.'},
+];
+function renderOnboarding(){
+  document.getElementById('sheet').style.maxHeight = '92%';
+  const i = state.organizer.onboardingIndex;
+  const dots = ONB_SLIDES.map((_,idx)=>`<span class="${idx===i?'on':''}" onclick="setOnbIndex(${idx})"></span>`).join('');
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <div class="onb-dots">${dots}</div>
+    <div class="onb-slide">
+      <h1>${ONB_SLIDES[i].h}</h1>
+      <p>${ONB_SLIDES[i].p}</p>
+    </div>
+  `, {cta:`<button class="btn-primary" onclick="openSheet('title')">회의 잡기 시작</button>`});
+}
+function setOnbIndex(i){ state.organizer.onboardingIndex = i; render(); }
+
+// ======================= 3) TITLE =======================
+function renderTitle(){
+  document.getElementById('sheet').style.maxHeight = '55%';
+  const o = state.organizer;
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <h1>어떤 회의인가요?</h1>
+    <p class="desc">동료들이 알아보기 쉬운 이름을 적어주세요.</p>
+    <div class="field-label">회의 제목</div>
+    <div class="input-box" style="cursor:text;">
+      <input id="titleInput" placeholder="예: 주간 싱크 회의" value="${o.title}" oninput="onTitleInput(this.value)">
+    </div>
+  `, {cta:`<button class="btn-primary" id="titleNext" ${o.title.trim()?'':'disabled'} onclick="openSheet('period')">다음</button>`});
+  document.getElementById('titleInput').focus();
+}
+function onTitleInput(v){
+  state.organizer.title = v;
+  document.getElementById('titleNext').disabled = !v.trim();
+}
+
+// ======================= 4) PERIOD =======================
+function renderPeriod(){
+  document.getElementById('sheet').style.maxHeight = '55%';
+  const o = state.organizer;
+  const label = (o.periodStart && o.periodEnd) ? `${fmtDate(o.periodStart)}  -  ${fmtDate(o.periodEnd)}` : 'YYYY.MM.DD  -  YYYY.MM.DD';
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <h1>언제 회의하면 좋을까요?</h1>
+    <p class="desc">회의가 열릴 수 있는 기간을 골라주세요.</p>
+    <div class="field-label">회의 희망 기간</div>
+    <div class="input-box ${(!o.periodStart)?'placeholder-color':''}" onclick="openPeriodPicker()">
+      <span>${label}</span><span>📅</span>
+    </div>
+    <div class="field-label">회의 제목</div>
+    <div class="input-box" style="color:var(--text-3);">${o.title}</div>
+  `, {cta:`<button class="btn-primary" ${o.periodStart&&o.periodEnd?'':'disabled'} onclick="openSheet('duration')">다음</button>`});
+}
+function openPeriodPicker(){
+  state.miniCal.start = state.organizer.periodStart;
+  state.miniCal.end = state.organizer.periodEnd;
+  openSub('periodPicker');
+}
+function renderPeriodPicker(){
+  const m = state.miniCal;
+  const startD=13, endD=17; // fixed july grid days shown same as calendar layout above
+  const weeks = CAL_ROWS.map(r=>r.map(c=>{
+    let cls='day'; if(c.dim) cls+=' dim';
+    const inRange = m.start && m.end && c.d>=m.start && c.d<=m.end && !c.dim;
+    const isStart = m.start===c.d && !c.dim;
+    const isEnd = m.end===c.d && !c.dim;
+    if(inRange) cls+=' in-range';
+    if(isStart) cls+=' range-start';
+    if(isEnd) cls+=' range-end';
+    const inner = (isStart||isEnd) ? `<span>${c.d}</span>` : c.d;
+    return `<div class="${cls}" onclick="pickMiniDate(${c.d},${!!c.dim})">${inner}</div>`;
+  }).join('')).join('');
+
+  return `
+    <div class="sheet-top"><button class="sheet-close" onclick="closeSub()">✕</button></div>
+    <div class="sheet-body">
+      <div class="mini-cal-head"><button onclick="return false;">‹</button><span>2026년 7월</span><button onclick="return false;">›</button></div>
+      <div class="mini-cal-grid">
+        <span class="wd">일</span><span class="wd">월</span><span class="wd">화</span><span class="wd">수</span><span class="wd">목</span><span class="wd">금</span><span class="wd">토</span>
+        ${weeks}
+      </div>
+    </div>
+    <div class="sheet-cta"><button class="btn-primary" ${(m.start&&m.end)?'':'disabled'} onclick="confirmPeriod()">완료</button></div>
+  `;
+}
+function pickMiniDate(d, dim){
+  if(dim) return;
+  const m = state.miniCal;
+  if(!m.start || (m.start && m.end)){ m.start = d; m.end = null; }
+  else { if(d < m.start){ m.end = m.start; m.start = d; } else { m.end = d; } }
+  render();
+}
+function confirmPeriod(){
+  state.organizer.periodStart = state.miniCal.start;
+  state.organizer.periodEnd = state.miniCal.end;
+  closeSub();
+}
+
+// ======================= 5) DURATION (dropdown demo) =======================
+const DURATIONS = ['30분','1시간','1시간 반','2시간','직접 정하기'];
+function renderDuration(){
+  document.getElementById('sheet').style.maxHeight = '45%';
+  const o = state.organizer;
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <h1>회의는 얼마나 할까요?</h1>
+    <p class="desc">필요한 회의 길이를 선택해주세요.</p>
+    <div class="field-label">회의시간</div>
+    <div class="input-box" onclick="openSub('durationPicker')"><span>${o.duration}</span><span class="chev">▾</span></div>
+    <div class="field-label">회의 희망 기간</div>
+    <div class="input-box" style="color:var(--text-3);">${fmtDate(o.periodStart)} - ${fmtDate(o.periodEnd)}</div>
+    <div class="field-label">회의 제목</div>
+    <div class="input-box" style="color:var(--text-3);">${o.title}</div>
+  `, {cta:`<button class="btn-primary" onclick="openSheet('deadline')">다음</button>`});
+}
+function renderDurationPicker(){
+  const items = DURATIONS.map(d=>`<div class="option-item ${state.organizer.duration===d?'selected':''}" onclick="pickDuration('${d}')">${d}</div>`).join('');
+  return `<div class="sheet-top"><button class="sheet-close" onclick="closeSub()">✕</button></div>
+          <div class="sheet-body"><h1 style="font-size:19px;">회의 시간</h1><div class="option-list">${items}</div></div>`;
+}
+function pickDuration(d){ state.organizer.duration = d; closeSub(); }
+
+// ======================= 6) DEADLINE (dropdown demo) =======================
+const DEADLINES = ['오늘 퇴근 전(~18:00)','내일 오전 10시','직접 정하기'];
+function renderDeadline(){
+  document.getElementById('sheet').style.maxHeight = '55%';
+  const o = state.organizer;
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <h1>언제까지 답을 받을까요?</h1>
+    <p class="desc">동료들이 답해야 하는 시간을 정해주세요.</p>
+    <div class="field-label">응답 마감</div>
+    <div class="input-box" onclick="openSub('deadlinePicker')"><span>${o.deadline}</span><span class="chev">▾</span></div>
+    <div class="field-label">회의시간</div>
+    <div class="input-box" style="color:var(--text-3);">${o.duration}</div>
+    <div class="field-label">회의 희망 기간</div>
+    <div class="input-box" style="color:var(--text-3);">${fmtDate(o.periodStart)} - ${fmtDate(o.periodEnd)}</div>
+  `, {cta:`<button class="btn-primary" onclick="openSheet('attendees')">다음</button>`});
+}
+function renderDeadlinePicker(){
+  const items = DEADLINES.map(d=>`<div class="option-item ${state.organizer.deadline===d?'selected':''}" onclick="pickDeadline('${d}')">${d}</div>`).join('');
+  return `<div class="sheet-top"><button class="sheet-close" onclick="closeSub()">✕</button></div>
+          <div class="sheet-body"><h1 style="font-size:19px;">답변 마감</h1><div class="option-list">${items}</div></div>`;
+}
+function pickDeadline(d){ state.organizer.deadline = d; closeSub(); }
+
+// ======================= 7) ATTENDEES =======================
+function renderAttendees(){
+  document.getElementById('sheet').style.maxHeight = '92%';
+  const o = state.organizer;
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <h1>누구와 회의할까요?</h1>
+    <p class="desc">꼭 필요한 사람과 선택 참석자를 나눠주세요.</p>
+    <div class="field-label">참석자</div>
+    <div class="input-box" style="cursor:text;">
+      <input id="attendeeSearchInput" placeholder="이메일 혹은 이름으로 검색할 수 있어요" value="${o.search}" oninput="handleAttendeeInput(this.value)">
+      <span>🔍</span>
+    </div>
+    <div id="attResultsArea"></div>
+  `, {cta:`<button class="btn-primary" id="attNextBtn" onclick="openSheet('review')">초대 내용확인</button>`});
+  updateAttendeeResultsArea();
+}
+function handleAttendeeInput(v){
+  state.organizer.search = v;
+  updateAttendeeResultsArea();
+}
+function updateAttendeeResultsArea(){
+  const o = state.organizer;
+  const q = o.search.trim();
+  const results = q ? CONTACTS.filter(c=>c.name.includes(q)) : [];
+
+  const resultsHtml = results.map(c=>{
+    const existing = o.attendees.find(a=>a.name===c.name);
+    const lvl = existing ? existing.level : null;
+    return `
+      <div class="search-result">
+        <div class="info"><div class="name">${c.name}</div><div class="mail">${c.email}</div></div>
+        <div class="chip-group">
+          <div class="chip ${lvl==='required'?'on-required':''}" onclick="toggleAttendee('${c.name}','${c.email}','required')">필수</div>
+          <div class="chip ${lvl==='optional'?'on-optional':''}" onclick="toggleAttendee('${c.name}','${c.email}','optional')">선택</div>
+        </div>
+      </div>`;
+  }).join('');
+
+  const addedHtml = o.attendees.map(a=>`
+    <div class="attendee-row">
+      <span class="name">${a.name}</span>
+      <span class="tag ${a.level}">${a.level==='required'?'필수':'선택'}</span>
+    </div>`).join('');
+
+  const area = document.getElementById('attResultsArea');
+  if(area){
+    area.innerHTML = `${resultsHtml}<div class="field-label">추가된 참석자</div>${addedHtml}`;
+  }
+  const btn = document.getElementById('attNextBtn');
+  if(btn) btn.disabled = !(o.attendees.length > 1);
+}
+function toggleAttendee(name, email, level){
+  const o = state.organizer;
+  const idx = o.attendees.findIndex(a=>a.name===name);
+  if(idx>-1){
+    if(o.attendees[idx].level===level){ o.attendees.splice(idx,1); }
+    else { o.attendees[idx].level = level; }
+  } else {
+    o.attendees.push({name, email, level});
+  }
+  updateAttendeeResultsArea();
+}
+
+// ======================= 8) REVIEW =======================
+function renderReview(){
+  document.getElementById('sheet').style.maxHeight = '92%';
+  const o = state.organizer;
+  const rows = o.attendees.map(a=>`
+    <div class="attendee-row">
+      <span class="name">${a.name}</span>
+      <span class="tag ${a.level}">${a.level==='required'?'필수':'선택'}</span>
+    </div>`).join('');
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <h1>이 내용으로 초대할까요?</h1>
+    <p class="desc">필요한 내용이 있다면 설명을 덧붙여주세요.</p>
+    <div class="field-label">설명</div>
+    <div class="input-box" style="color:var(--text-3);">예: 이번 주 안건을 함께 확인해요</div>
+    <div class="field-label">참석자</div>
+    ${rows}
+    <div class="field-label">응답 마감</div>
+    <div class="input-box" style="color:var(--text-3);">${o.deadline}</div>
+    <div class="field-label">회의시간</div>
+    <div class="input-box" style="color:var(--text-3);">${o.duration}</div>
+    <div class="field-label">회의 희망 기간</div>
+    <div class="input-box" style="color:var(--text-3);">${fmtDate(o.periodStart)} - ${fmtDate(o.periodEnd)}</div>
+    <div class="field-label">회의 제목</div>
+    <div class="input-box" style="color:var(--text-3);">${o.title}</div>
+  `, {cta:`<button class="btn-primary" onclick="sendInvite()">초대 보내기</button>`});
+}
+function sendInvite(){
+  state.organizer.inviteSent = true;
+  closeSheet();
+  showToast('초대를 보냈어요', '동료들에게 알림을 보냈어요.', ()=>{
+    showToast('참석자 화면으로 전환', '실제로는 각 참석자의 화면에서 보여요.<br>참석자 입장이 되어 답변해보세요.', ()=>{
+      state.flowMode = 'demo';
+      state.participant = freshParticipantState();
+      openSheet('pIntro');
+    });
+  });
+}
+
+// ======================= 9) SENT =======================
+function renderSent(){
+  document.getElementById('sheet').style.maxHeight = '80%';
+  const o = state.organizer;
+  const rows = o.attendees.map(a=>{
+    const done = o.responded.has(a.name);
+    return `
+    <div class="status-row">
+      <span>${a.name}</span>
+      <span style="display:flex;gap:10px;align-items:center;">
+        <span class="${done?'status-done':'status-pending'}">${done?'응답완료':'미응답'}</span>
+        <span class="tag ${a.level}">${a.level==='required'?'필수':'선택'}</span>
+      </span>
+    </div>`;
+  }).join('');
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <h1>초대를 보냈어요</h1>
+    <p class="desc">동료에게 알림을 보냈어요. 링크로도 공유할 수 있어요.</p>
+    <div class="link-box"><span>https://meetup.app/invite/8f2a...</span><span>📋</span></div>
+    ${rows}
+  `, {cta:`<button class="btn-primary" onclick="closeSheet()">닫기</button>`});
+}
+function simulateResponses(){
+  const o = state.organizer;
+  const names = o.attendees.filter(a=>!a.isMe).map(a=>a.name);
+  names.forEach((name, i)=>{
+    setTimeout(()=>{
+      o.responded.add(name);
+      if(state.overlay==='sent') render();
+      if(o.responded.size === names.length){
+        setTimeout(()=>{
+          showToast('응답 완료', '나연님, 참석자 모두가 답변을 했어요.<br>마감 전까지 확정하지 않으면 자동으로 확정돼요.', ()=>{
+            openSheet('recommend');
+          });
+        }, 500);
+      }
+    }, 900*(i+1));
+  });
+}
+
+// ======================= 10) RECOMMEND =======================
+function renderRecommend(){
+  document.getElementById('sheet').style.maxHeight = '92%';
+  const o = state.organizer;
+  const cards = RECOMMEND.map((r,idx)=>`
+    <div class="rec-card ${o.recSelected===idx?'selected':''}" onclick="selectRec(${idx})">
+      <span class="rec-badge ${o.recSelected===idx?'':'dim'}">${r.rank}순위</span>
+      <div class="rec-time">${r.label}</div>
+      <div class="rec-sub">${r.sub}</div>
+    </div>`).join('');
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <h1>가장 좋은 시간을 찾았어요</h1>
+    <p class="desc">필수 참석자가 모두 가능하고,<br>선호가 가장 많이 겹치는 순서예요.</p>
+    <div class="field-label" style="margin-top:0;">추천시간</div>
+    ${cards}
+    <p style="font-size:12px;color:var(--text-2);margin-top:4px;">동점이면 더 빠른 날짜를 먼저 추천해요.<br>오늘 6시까지 고르지 않으면 1순위가 자동 확정돼요.</p>
+  `, {cta:`
+      <button class="btn-primary" onclick="confirmMeeting('manual')">확정하기</button>
+      <button class="btn-secondary" onclick="confirmMeeting('auto')">마감까지 기다리기 (자동확정 체험)</button>
+  `});
+}
+function selectRec(i){ state.organizer.recSelected = i; render(); }
+function confirmMeeting(mode){
+  state.organizer.confirmMode = mode;
+  openSheet(mode==='manual' ? 'confirmed' : 'autoConfirmed');
+}
+
+// ======================= 11) CONFIRMED =======================
+function renderConfirmed(){
+  document.getElementById('sheet').style.maxHeight = '70%';
+  const r = RECOMMEND[state.organizer.recSelected];
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <h1>회의 시간을 정했어요</h1>
+    <p class="desc">참석자에게 확정 시간과 이유를 함께 알려드려요.</p>
+    <div class="confirm-box">
+      <div class="confirm-date">7월 16일 목요일<br>${r.label.split(' ').slice(1).join(' ')}</div>
+      <div class="why-box">
+        <div class="q">왜 이 시간인가요?</div>
+        <div class="a">${r.sub}</div>
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--text-2);">선호가 반영되지 않은 참석자에게는 개인별 사유를 따로 안내해요.</p>
+  `, {cta:`<button class="btn-primary" onclick="closeSheet()">캘린더에서 보기</button>`});
+}
+function renderAutoConfirmed(){
+  document.getElementById('sheet').style.maxHeight = '65%';
+  const r = RECOMMEND[0];
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <h1>설정한 기준에 따라 확정했어요</h1>
+    <p class="desc">답변 마감이 지나, 미리 동의한 기준에 따라<br>1순위 시간으로 정했어요.</p>
+    <div class="field-label" style="margin-top:0;">주간 싱크 회의</div>
+    <div class="input-box" style="color:var(--text);">확정 시간 · ${r.label}</div>
+    <div class="field-label">확정된 이유</div>
+    <div class="why-box">
+      <div class="a">1. 응답 마감이 지났어요<br>2. 주최자가 직접 확정하지 않았어요<br>3. 1순위 후보가 필수 참석자 모두 가능한 시간이었어요</div>
+    </div>
+  `, {cta:`<button class="btn-primary" onclick="closeSheet()">캘린더에서 보기</button>`});
+}
+
+// ======================= PARTICIPANT: INTRO =======================
+function renderPIntro(){
+  document.getElementById('sheet').style.maxHeight = '92%';
+  const rows = ['이나연','김도현','김보라','박지민','최은우','김민정'].map(n=>`<div class="p">${n}</div>`).join('');
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <div class="meeting-hero">
+      <h1>주간 싱크 회의</h1>
+      <div class="sub">7/13 - 7/17 중 1시간 · 오늘 퇴근 전 마감</div>
+      <div class="invited-by">
+        <div><div class="name">나연님이 초대했어요</div><div class="sub">필수 참석자로 요청받았어요</div></div>
+        <span class="tag required">필수</span>
+      </div>
+      <div class="attendee-list-box">
+        <div class="h">참석자</div>
+        ${rows}
+      </div>
+    </div>
+  `, {cta:`
+    <div class="anytime-link" onclick="anytimeRespond()" style="position:static;margin-bottom:12px;">아무 때나 괜찮아요</div>
+    <button class="btn-primary" onclick="openSheet('pUnavail')">회의 잡기 시작</button>
+  `});
+}
+function anytimeRespond(){ state.participant.anytime = true; openSheet('pSummary'); }
+
+// ======================= PARTICIPANT: GRID STEPS =======================
+const GRID_META = {
+  unavail: {title:'참석할 수 없는<br>시간을 골라주세요', desc:'캘린더에 있는 일정은 이미 제외했어요.', next:'pAvoid'},
+  avoid:   {title:'가능하지만 피하고 싶은<br>시간이 있나요?', desc:'없다면 바로 다음으로 넘어가도 괜찮아요.', next:'pPrefer'},
+  prefer:  {title:'가장 편한 시간은<br>언제인가요?', desc:'가능하다면 이 시간을 먼저 고려할게요.', next:'pSummary'},
+};
+let dragPaint = null;
+function renderPGrid(step){
+  document.getElementById('sheet').style.maxHeight = '92%';
+  const meta = GRID_META[step];
+  const g = state.participant.grid;
+  const hours = g.expanded ? [...HOURS_BASE, ...HOURS_MORE] : HOURS_BASE;
+  const dotIdx = {unavail:0, avoid:1, prefer:2}[step];
+  const dots = [0,1,2].map(i=>`<span class="${i===dotIdx?'on':''}"></span>`).join('');
+
+  function cellClass(day, hour){
+    const key = day+'-'+hour;
+    const v = g.cell[key];
+    if(v==='locked') return 'locked';
+    if(step==='unavail'){ return v==='unavail' ? 'on-unavail' : ''; }
+    if(step==='avoid'){
+      if(v==='unavail') return 'locked';
+      return v==='avoid' ? 'on-avoid' : '';
+    }
+    if(step==='prefer'){
+      if(v==='unavail') return 'locked';
+      if(v==='avoid') return 'readonly-avoid';
+      return v==='prefer' ? 'on-prefer' : '';
+    }
+    return '';
+  }
+  function isInteractive(day, hour){
+    const v = g.cell[day+'-'+hour];
+    if(v==='locked') return false;
+    if(step==='avoid' && v==='unavail') return false;
+    if(step==='prefer' && (v==='unavail' || v==='avoid')) return false;
+    return true;
+  }
+
+  const headerRow = `<div class="row-label"></div>` + DAYS.map(d=>`<div class="h-cell">${d}</div>`).join('');
+  const rows = ['전체', ...hours].map(rowLabel=>{
+    if(rowLabel==='전체'){
+      return `<div class="row-label">전체</div>` + DAYS.map(d=>{
+        const allLocked = hours.every(h=> g.cell[d+'-'+h]==='locked');
+        const cls = allLocked ? 'locked' : '';
+        return `<div class="g-cell ${cls}" data-col="${d}" data-all="1"></div>`;
+      }).join('');
+    }
+    const h = rowLabel;
+    return `<div class="row-label">${h}</div>` + DAYS.map(d=>{
+      return `<div class="g-cell ${cellClass(d,h)}" data-day="${d}" data-hour="${h}"></div>`;
+    }).join('');
+  }).join('');
+
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <div class="onb-dots">${dots}</div>
+    <h1>${meta.title}</h1>
+    <p class="desc">${meta.desc}</p>
+    <div class="grid-wrap" id="gridWrap">
+      <div class="grid-table">${headerRow}${rows}</div>
+      <div class="expand-row" onclick="toggleExpand()">${g.expanded?'시간대 접기 ^':'시간대 더보기 ⌄'}</div>
+    </div>
+  `, {cta:`<button class="btn-primary" onclick="openSheet('${meta.next}')">다음</button>`});
+
+  attachGridEvents(step, isInteractive);
+}
+function toggleExpand(){ state.participant.grid.expanded = !state.participant.grid.expanded; render(); }
+
+function attachGridEvents(step, isInteractive){
+  const wrap = document.getElementById('gridWrap');
+  let painting = false;
+  let paintValue = null;
+
+  function setCell(day, hour, value){
+    const key = day+'-'+hour;
+    const g = state.participant.grid;
+    if(!isInteractive(day, hour)) return;
+    g.cell[key] = value ? step : null;
+  }
+  function getTargetStep(day,hour){
+    const g = state.participant.grid;
+    return g.cell[day+'-'+hour] === step;
+  }
+
+  wrap.addEventListener('pointerdown', (e)=>{
+    const t = e.target;
+    if(t.dataset.all){
+      const day = t.dataset.col;
+      const g = state.participant.grid;
+      const hours = g.expanded ? [...HOURS_BASE, ...HOURS_MORE] : HOURS_BASE;
+      const allOn = hours.every(h=> g.cell[day+'-'+h]===step || g.cell[day+'-'+h]==='locked');
+      hours.forEach(h=> setCell(day, h, !allOn));
+      render();
+      return;
+    }
+    if(!t.dataset.day) return;
+    painting = true;
+    paintValue = !getTargetStep(t.dataset.day, t.dataset.hour);
+    setCell(t.dataset.day, t.dataset.hour, paintValue);
+    renderGridOnly(step, isInteractive);
+  });
+  wrap.addEventListener('pointerenter', (e)=>{
+    if(!painting) return;
+    const t = e.target;
+    if(!t.dataset.day) return;
+    setCell(t.dataset.day, t.dataset.hour, paintValue);
+    renderGridOnly(step, isInteractive);
+  }, true);
+  document.addEventListener('pointerup', ()=>{ painting = false; }, {once:false});
+}
+// lightweight re-render of just the grid cells (keeps drag smooth)
+function renderGridOnly(step, isInteractive){
+  const g = state.participant.grid;
+  const hours = g.expanded ? [...HOURS_BASE, ...HOURS_MORE] : HOURS_BASE;
+  document.querySelectorAll('#gridWrap .g-cell[data-day]').forEach(cellEl=>{
+    const day = cellEl.dataset.day, hour = cellEl.dataset.hour;
+    const v = g.cell[day+'-'+hour];
+    let cls = 'g-cell';
+    if(v==='locked') cls+=' locked';
+    else if(step==='unavail' && v==='unavail') cls+=' on-unavail';
+    else if(step==='avoid'){ if(v==='unavail') cls+=' locked'; else if(v==='avoid') cls+=' on-avoid'; }
+    else if(step==='prefer'){ if(v==='unavail') cls+=' locked'; else if(v==='avoid') cls+=' readonly-avoid'; else if(v==='prefer') cls+=' on-prefer'; }
+    cellEl.className = cls;
+  });
+  document.querySelectorAll('#gridWrap .g-cell[data-all]').forEach(cellEl=>{
+    const day = cellEl.dataset.col;
+    const allLocked = hours.every(h=> g.cell[day+'-'+h]==='locked');
+    cellEl.className = 'g-cell' + (allLocked?' locked':'');
+  });
+}
+
+// ======================= PARTICIPANT: SUMMARY =======================
+function summarizeRange(step){
+  const g = state.participant.grid;
+  const hours = [...HOURS_BASE, ...HOURS_MORE];
+  const perDay = {};
+  DAYS.forEach(d=>{
+    const hs = hours.filter(h=> g.cell[d+'-'+h]===step);
+    if(hs.length) perDay[d] = hs;
+  });
+  if(step==='unavail'){
+    // 월 is always fully locked (preset)
+    const fullDays = [];
+    const partial = [];
+    DAYS.forEach(d=>{
+      const allH = hours.filter(h=> g.cell[d+'-'+h]==='locked' || g.cell[d+'-'+h]==='unavail');
+      if(d==='월') { fullDays.push('월요일 종일'); return; }
+      if(perDay[d] && perDay[d].length){ partial.push(`${d} ${Math.min(...perDay[d])}-${Math.max(...perDay[d])+1}`); }
+    });
+    return [...fullDays, ...partial].join(', ') || '없음';
+  }
+  const keys = Object.keys(perDay);
+  if(!keys.length) return '없음';
+  // group by identical hour ranges for compact display
+  const ranges = keys.map(d=>`${d} ${Math.min(...perDay[d])}-${Math.max(...perDay[d])+1}`);
+  return ranges.join(', ');
+}
+function renderPSummary(){
+  document.getElementById('sheet').style.maxHeight = '70%';
+  const p = state.participant;
+  let body;
+  if(p.anytime){
+    body = `<div class="summary-box"><div class="h">아무 때나 괜찮아요</div><div class="v">동료들이 정하는 시간에 맞출게요.</div></div>`;
+  } else {
+    body = `
+      <div class="summary-box"><div class="h">불가능</div><div class="v">${summarizeRange('unavail')}</div></div>
+      <div class="summary-box"><div class="h">피하고 싶은 시간</div><div class="v">${summarizeRange('avoid')}</div></div>
+      <div class="summary-box"><div class="h">선호 시간</div><div class="v">${summarizeRange('prefer')}</div></div>
+      <p style="font-size:13px;color:var(--text-2);">선호가 반영되지 않을 때<br>"필수 참석자 4명이 모두 가능한 가장 빠른 시간이어서 이 시간으로 정했어요."처럼 개인별 사유를 알려줘요.</p>
+    `;
+  }
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <h1>답변을 보냈어요</h1>
+    <p class="desc">시간이 정해지면 알림으로 알려드릴게요.</p>
+    <div class="field-label" style="margin-top:0;">내가 답한 시간</div>
+    ${body}
+  `, {cta:`<button class="btn-primary" onclick="finishParticipantFlow()">답변 보내기</button>`});
+}
+function finishParticipantFlow(){
+  closeSheet();
+  if(state.flowMode === 'demo'){
+    showToast('모든 참여자 답변 완료', '나연님, 참석자 모두가 답변을 했어요.<br>마감 전까지 확정하지 않으면 자동으로 확정돼요.', ()=>{
+      state.flowMode = null;
+      openSheet('recommend');
+    });
+  }
+}
+
+// ======================= CLOCK =======================
+function tickClock(){
+  const d = new Date();
+  document.getElementById('clock').textContent = d.toLocaleTimeString('en-US',{hour:'numeric',minute:'2-digit',hour12:false});
+}
+tickClock(); setInterval(tickClock, 30000);
+
+// ======================= INIT =======================
+render();
+
+</script>
+</body>
+</html>
