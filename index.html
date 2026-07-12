@@ -262,6 +262,22 @@
   .summary-box .v{font-size:13px; color:var(--text-2);}
 
   ::-webkit-scrollbar{display:none;}
+
+  @media (max-width: 480px){
+    html, body{ height:100%; overflow:hidden; overscroll-behavior:none; }
+    body{ padding:0; align-items:stretch; }
+    .phone{
+      width:100vw;
+      height:100dvh;
+      max-height:100dvh;
+      border-radius:0;
+      border:none;
+      box-shadow:none;
+    }
+    .statusbar{ display:none; }
+    .calendar{ padding-top:max(16px, env(safe-area-inset-top)); }
+    .role-switch{ top:max(6px, env(safe-area-inset-top)); }
+  }
 </style>
 </head>
 <body>
