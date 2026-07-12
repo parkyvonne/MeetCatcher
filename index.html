@@ -55,7 +55,7 @@
   .cal-year{display:flex; align-items:center; gap:2px; font-size:19px; color:var(--text); font-weight:400;}
   .cal-add-btn{
     width:38px;height:38px;border-radius:50%;background:var(--blue);
-    color:#fff;border:none;font-size:20px;display:flex;align-items:center;justify-content:center;
+    color:#fff;border:none;display:flex;align-items:center;justify-content:center;
     cursor:pointer;
   }
   .cal-month{font-size:32px; font-weight:800; padding:14px 20px 6px; color:var(--text);}
@@ -63,14 +63,19 @@
   .cal-weekdays span{text-align:center; font-size:13px; color:var(--text-3); padding:6px 0;}
   .cal-grid{display:grid; grid-template-columns:repeat(7,1fr);}
   .cal-cell{
-    text-align:center; padding:14px 0; font-size:17px; color:var(--text); border-top:1px solid var(--border);
-    position:relative;
+    text-align:center; padding:10px 0 14px; font-size:17px; color:var(--text); border-top:1px solid var(--border);
+    position:relative; display:flex; flex-direction:column; align-items:center; gap:3px;
   }
   .cal-cell.dim{color:var(--text-3);}
   .cal-cell .num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;}
   .cal-cell.today .num{background:var(--blue); color:#fff; font-weight:600;}
+  .cal-event-chip{
+    display:flex; align-items:center; gap:2px; background:var(--blue-light); color:var(--blue);
+    font-size:10px; font-weight:600; border-radius:5px; padding:2px 4px; max-width:100%;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
   .cal-footer{position:absolute; bottom:28px; left:0; right:0; display:flex; align-items:center; justify-content:space-between; padding:0 24px;}
-  .today-pill{background:var(--fill); color:var(--text); border:none; border-radius:20px; padding:10px 18px; font-size:15px;}
+  .today-pill{background:var(--fill); color:var(--blue); font-weight:600; border:none; border-radius:20px; padding:10px 18px; font-size:15px;}
   .role-switch{
     position:absolute; top:6px; right:16px; font-size:11px; color:var(--blue); background:none;border:none;
     text-decoration:underline; z-index:600; cursor:pointer;
@@ -107,8 +112,8 @@
 
   /* ---------- Onboarding ---------- */
   .onb-dots{display:flex; gap:6px; justify-content:center; margin:8px 0 40px;}
-  .onb-dots span{width:22px;height:6px;border-radius:3px;background:var(--fill-2);}
-  .onb-dots span.on{background:var(--text); width:28px;}
+  .onb-dots span{width:8px;height:6px;border-radius:3px;background:var(--fill-2);}
+  .onb-dots span.on{background:var(--text); width:32px;}
   .onb-slide{text-align:center; padding-top:20px;}
   .onb-slide h1{font-size:26px; font-weight:800; margin-bottom:14px;}
   .onb-slide p{font-size:15px; color:var(--text-2); line-height:1.5;}
@@ -124,7 +129,7 @@
   .input-box input{border:none; outline:none; font-size:16px; width:100%; font-family:inherit; color:var(--text);}
   .input-box input::placeholder{color:var(--text-3);}
   .input-box.placeholder-color{color:var(--text-3);}
-  .input-box .chev{color:var(--text-3); font-size:14px;}
+  .input-box .chev{color:var(--text-3); font-size:14px; display:flex; align-items:center;}
   .input-row{display:flex; gap:10px; align-items:center;}
   .input-row .input-box{flex:1;}
   .sep{color:var(--text-3); font-size:16px;}
@@ -144,16 +149,13 @@
   .mini-cal-head span{font-size:19px; font-weight:700;}
   .mini-cal-grid{display:grid; grid-template-columns:repeat(7,1fr); text-align:center;}
   .mini-cal-grid .wd{font-size:13px; color:var(--text-3); padding:8px 0;}
-  .mini-cal-grid .day{
-    padding:10px 0; font-size:16px; color:var(--text); cursor:pointer; position:relative;
-  }
+  .mini-cal-grid .day{padding:6px 0; font-size:16px; color:var(--text); cursor:pointer;}
   .mini-cal-grid .day.dim{color:var(--text-3);}
   .mini-cal-grid .day.in-range{background:var(--blue-light);}
-  .mini-cal-grid .day.range-start, .mini-cal-grid .day.range-end{
-    color:#fff;
-  }
-  .mini-cal-grid .day.range-start span, .mini-cal-grid .day.range-end span{
-    background:var(--blue); border-radius:50%; width:30px;height:30px; display:inline-flex; align-items:center; justify-content:center;
+  .mini-cal-grid .day .num-circle{display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:50%; margin:0 auto;}
+  .mini-cal-grid .day.today .num-circle{color:var(--blue); font-weight:700;}
+  .mini-cal-grid .day.range-start .num-circle, .mini-cal-grid .day.range-end .num-circle{
+    background:var(--blue); color:#fff;
   }
 
   /* ---------- Attendee search ---------- */
@@ -162,6 +164,8 @@
   }
   .search-result .info .name{font-size:16px; font-weight:600;}
   .search-result .info .mail{font-size:13px; color:var(--text-2);}
+  .scroll-box{max-height:270px; overflow-y:auto;}
+  .scroll-box-added{max-height:216px; overflow-y:auto;}
   .chip-group{display:flex; gap:8px;}
   .chip{
     border-radius:20px; padding:6px 14px; font-size:13px; border:1.5px solid var(--border); color:var(--text-2);
@@ -247,8 +251,9 @@
   .g-cell.on-unavail{background:#1c1c1e;}
   .g-cell.on-avoid{background:var(--red);}
   .g-cell.readonly-avoid{background:var(--pink-light); cursor:not-allowed;}
+  .g-cell.grey-unavail{background:#D7D7D7; cursor:not-allowed;}
   .g-cell.on-prefer{background:var(--blue);}
-  .expand-row{text-align:center; margin-top:10px; font-size:13px; color:var(--text-2); cursor:pointer;}
+  .expand-row{display:flex; align-items:center; justify-content:center; gap:4px; margin-top:10px; font-size:13px; color:var(--text-2); cursor:pointer;}
 
   .anytime-link{position:absolute; bottom:96px; left:0; right:0; text-align:center; font-size:14px; color:var(--text); text-decoration:underline; cursor:pointer;}
 
@@ -296,20 +301,27 @@
 
 <script>
 // ======================= MOCK DATA =======================
-const CONTACTS = [
-  {name:'김민수', email:'minsoo@company.com'},
-  {name:'김도현', email:'dohyun@company.com'},
-  {name:'김보라', email:'bora@company.com'},
-  {name:'김민정', email:'minjeong@company.com'},
-  {name:'박지민', email:'jimin@company.com'},
-  {name:'최은우', email:'eunwoo@company.com'},
-];
+const SURNAMES = ['김','이','박','최','정','강','조','윤','장','임','한','오','서','신','권','황','안'];
+const GIVEN_NAMES = ['민수','도현','보라','민정','지민','은우','서연','하은','지훈','유진','승민','예은','수빈','현우','다은','재원','소율','준서','아린','태윤','채원','시우','유나','건우','하람','도윤','서준','지안','예린','민재'];
+function generateContacts(count){
+  const list = [];
+  for(let g=0; g<GIVEN_NAMES.length && list.length<count; g++){
+    for(let s=0; s<SURNAMES.length && list.length<count; s++){
+      const idx = list.length;
+      list.push({name:SURNAMES[s]+GIVEN_NAMES[g], email:`user${idx+1}@company.com`});
+    }
+  }
+  return list;
+}
+const CONTACTS = generateContacts(200);
 
 const RECOMMEND = [
-  {rank:1, label:'목 7/16 오후 2:00 - 3:00', sub:'필수 참석자 4명 모두 가능 · 선호 3명 · 기피 1명'},
-  {rank:2, label:'수 7/15 오후 3:00 - 4:00', sub:'필수 참석자 4명 모두 가능 · 선호 2명 · 기피 1명'},
-  {rank:3, label:'금 7/17 오전 10:00 - 11:00', sub:'필수 참석자 4명 모두 가능 · 선호 2명 · 기피 2명'},
+  {rank:1, dow:'목', date:'7/16', time:'오후 2:00 - 3:00', sub:'필수 참석자 4명 모두 가능 · 선호 3명 · 기피 1명'},
+  {rank:2, dow:'수', date:'7/15', time:'오후 3:00 - 4:00', sub:'필수 참석자 4명 모두 가능 · 선호 2명 · 기피 1명'},
+  {rank:3, dow:'금', date:'7/17', time:'오전 10:00 - 11:00', sub:'필수 참석자 4명 모두 가능 · 선호 2명 · 기피 2명'},
 ];
+function fmtRecLabel(r){ return `${r.dow} ${r.date} ${r.time}`; }
+function fmtRecFullDate(r){ const [m,d]=r.date.split('/'); return `${m}월 ${d}일 ${r.dow}요일`; }
 
 const DAYS = ['월','화','수','목','금'];
 const HOURS_BASE = [9,10,11,12,13,14,15,16,17,18];
@@ -360,6 +372,9 @@ const state = {
   overlay:null,       // current main sheet screen name
   sub:null,           // current sub-sheet (picker) name
   flowMode:null,      // 'demo' when auto-chained from invite send, null otherwise
+  editReturn:false,   // true when a step screen was opened for editing from the review screen
+  pEditReturn:false,  // true when a grid step was opened for editing from the participant summary screen
+  calendarEvent:null, // {day, title} set once a meeting is confirmed, shown as a chip on the calendar
   miniCal:{start:null, end:null},
   organizer: freshOrganizerState(),
   participant: freshParticipantState(),
@@ -380,6 +395,11 @@ function openSheet(name){ state.overlay = name; state.sub=null; render(); }
 function closeSheet(){ state.overlay = null; state.sub=null; render(); }
 function openSub(name){ state.sub = name; render(); }
 function closeSub(){ state.sub = null; render(); }
+function goNext(nextScreen){
+  if(state.editReturn){ state.editReturn = false; openSheet('review'); }
+  else { openSheet(nextScreen); }
+}
+function editField(screen){ state.editReturn = true; openSheet(screen); }
 
 function switchRole(){
   if(state.role === 'organizer'){
@@ -400,17 +420,29 @@ function switchRole(){
 }
 
 // ======================= RENDER: CALENDAR =======================
+function truncateTitle(t, n){
+  if(!t) return '';
+  return t.length > n ? t.slice(0,n)+'…' : t;
+}
 function renderCalendar(){
   const cal = document.getElementById('calendarLayer');
   const rows = CAL_ROWS.map(row => row.map(c=>{
     const cls = ['cal-cell']; if(c.dim) cls.push('dim'); if(c.today) cls.push('today');
-    return `<div class="${cls.join(' ')}"><span class="num">${c.d}</span></div>`;
+    const hasEvent = state.calendarEvent && !c.dim && state.calendarEvent.day === c.d;
+    const chip = hasEvent ? `
+      <div class="cal-event-chip">
+        <svg width="10" height="10" viewBox="0 0 18 18" fill="none"><rect x="1" y="3" width="16" height="13" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M1 7H17" stroke="currentColor" stroke-width="1.6"/><path d="M5 1V4M13 1V4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <span>${truncateTitle(state.calendarEvent.title, 4)}</span>
+      </div>` : '';
+    return `<div class="${cls.join(' ')}"><span class="num">${c.d}</span>${chip}</div>`;
   }).join('')).join('');
 
   cal.innerHTML = `
     <div class="cal-header">
       <div class="cal-year">‹ 2026</div>
-      <button class="cal-add-btn" id="addBtn">+</button>
+      <button class="cal-add-btn" id="addBtn">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 1V15M1 8H15" stroke="white" stroke-width="2" stroke-linecap="round"/></svg>
+      </button>
     </div>
     <div class="cal-month">7월</div>
     <div class="cal-weekdays"><span>일</span><span>월</span><span>화</span><span>수</span><span>목</span><span>금</span><span>토</span></div>
@@ -524,13 +556,34 @@ function renderOnboarding(){
   const dots = ONB_SLIDES.map((_,idx)=>`<span class="${idx===i?'on':''}" onclick="setOnbIndex(${idx})"></span>`).join('');
   document.getElementById('sheet').innerHTML = sheetShell(`
     <div class="onb-dots">${dots}</div>
-    <div class="onb-slide">
+    <div class="onb-slide" id="onbTapZone">
       <h1>${ONB_SLIDES[i].h}</h1>
       <p>${ONB_SLIDES[i].p}</p>
     </div>
   `, {cta:`<button class="btn-primary" onclick="openSheet('title')">회의 잡기 시작</button>`});
+  attachOnbEvents();
 }
 function setOnbIndex(i){ state.organizer.onboardingIndex = i; render(); }
+function prevOnb(){ state.organizer.onboardingIndex = Math.max(0, state.organizer.onboardingIndex-1); render(); }
+function nextOnb(){ state.organizer.onboardingIndex = Math.min(ONB_SLIDES.length-1, state.organizer.onboardingIndex+1); render(); }
+let onbStartX = null;
+function attachOnbEvents(){
+  const zone = document.getElementById('onbTapZone');
+  if(!zone) return;
+  zone.addEventListener('pointerdown', (e)=>{ onbStartX = e.clientX; });
+  zone.addEventListener('pointerup', (e)=>{
+    if(onbStartX===null) return;
+    const dx = e.clientX - onbStartX;
+    const rect = zone.getBoundingClientRect();
+    if(Math.abs(dx) > 40){
+      if(dx < 0) nextOnb(); else prevOnb();
+    } else {
+      const x = e.clientX - rect.left;
+      if(x < rect.width/2) prevOnb(); else nextOnb();
+    }
+    onbStartX = null;
+  });
+}
 
 // ======================= 3) TITLE =======================
 function renderTitle(){
@@ -543,7 +596,7 @@ function renderTitle(){
     <div class="input-box" style="cursor:text;">
       <input id="titleInput" placeholder="예: 주간 싱크 회의" value="${o.title}" oninput="onTitleInput(this.value)">
     </div>
-  `, {cta:`<button class="btn-primary" id="titleNext" ${o.title.trim()?'':'disabled'} onclick="openSheet('period')">다음</button>`});
+  `, {cta:`<button class="btn-primary" id="titleNext" ${o.title.trim()?'':'disabled'} onclick="goNext('period')">다음</button>`});
   document.getElementById('titleInput').focus();
 }
 function onTitleInput(v){
@@ -561,11 +614,12 @@ function renderPeriod(){
     <p class="desc">회의가 열릴 수 있는 기간을 골라주세요.</p>
     <div class="field-label">회의 희망 기간</div>
     <div class="input-box ${(!o.periodStart)?'placeholder-color':''}" onclick="openPeriodPicker()">
-      <span>${label}</span><span>📅</span>
+      <span>${label}</span>
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="3" width="16" height="13" rx="2" stroke="black" stroke-width="1.3"/><path d="M1 7H17" stroke="black" stroke-width="1.3"/><path d="M5 1V4M13 1V4" stroke="black" stroke-width="1.3" stroke-linecap="round"/></svg>
     </div>
     <div class="field-label">회의 제목</div>
     <div class="input-box" style="color:var(--text-3);">${o.title}</div>
-  `, {cta:`<button class="btn-primary" ${o.periodStart&&o.periodEnd?'':'disabled'} onclick="openSheet('duration')">다음</button>`});
+  `, {cta:`<button class="btn-primary" ${o.periodStart&&o.periodEnd?'':'disabled'} onclick="goNext('duration')">다음</button>`});
 }
 function openPeriodPicker(){
   state.miniCal.start = state.organizer.periodStart;
@@ -574,17 +628,15 @@ function openPeriodPicker(){
 }
 function renderPeriodPicker(){
   const m = state.miniCal;
-  const startD=13, endD=17; // fixed july grid days shown same as calendar layout above
   const weeks = CAL_ROWS.map(r=>r.map(c=>{
-    let cls='day'; if(c.dim) cls+=' dim';
+    let cls='day'; if(c.dim) cls+=' dim'; if(c.today) cls+=' today';
     const inRange = m.start && m.end && c.d>=m.start && c.d<=m.end && !c.dim;
     const isStart = m.start===c.d && !c.dim;
     const isEnd = m.end===c.d && !c.dim;
     if(inRange) cls+=' in-range';
     if(isStart) cls+=' range-start';
     if(isEnd) cls+=' range-end';
-    const inner = (isStart||isEnd) ? `<span>${c.d}</span>` : c.d;
-    return `<div class="${cls}" onclick="pickMiniDate(${c.d},${!!c.dim})">${inner}</div>`;
+    return `<div class="${cls}" onclick="pickMiniDate(${c.d},${!!c.dim})"><span class="num-circle">${c.d}</span></div>`;
   }).join('')).join('');
 
   return `
@@ -621,12 +673,12 @@ function renderDuration(){
     <h1>회의는 얼마나 할까요?</h1>
     <p class="desc">필요한 회의 길이를 선택해주세요.</p>
     <div class="field-label">회의시간</div>
-    <div class="input-box" onclick="openSub('durationPicker')"><span>${o.duration}</span><span class="chev">▾</span></div>
+    <div class="input-box" onclick="openSub('durationPicker')"><span>${o.duration}</span><span class="chev"><svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="#C7C7CC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
     <div class="field-label">회의 희망 기간</div>
     <div class="input-box" style="color:var(--text-3);">${fmtDate(o.periodStart)} - ${fmtDate(o.periodEnd)}</div>
     <div class="field-label">회의 제목</div>
     <div class="input-box" style="color:var(--text-3);">${o.title}</div>
-  `, {cta:`<button class="btn-primary" onclick="openSheet('deadline')">다음</button>`});
+  `, {cta:`<button class="btn-primary" onclick="goNext('deadline')">다음</button>`});
 }
 function renderDurationPicker(){
   const items = DURATIONS.map(d=>`<div class="option-item ${state.organizer.duration===d?'selected':''}" onclick="pickDuration('${d}')">${d}</div>`).join('');
@@ -644,12 +696,12 @@ function renderDeadline(){
     <h1>언제까지 답을 받을까요?</h1>
     <p class="desc">동료들이 답해야 하는 시간을 정해주세요.</p>
     <div class="field-label">응답 마감</div>
-    <div class="input-box" onclick="openSub('deadlinePicker')"><span>${o.deadline}</span><span class="chev">▾</span></div>
+    <div class="input-box" onclick="openSub('deadlinePicker')"><span>${o.deadline}</span><span class="chev"><svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="#C7C7CC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
     <div class="field-label">회의시간</div>
     <div class="input-box" style="color:var(--text-3);">${o.duration}</div>
     <div class="field-label">회의 희망 기간</div>
     <div class="input-box" style="color:var(--text-3);">${fmtDate(o.periodStart)} - ${fmtDate(o.periodEnd)}</div>
-  `, {cta:`<button class="btn-primary" onclick="openSheet('attendees')">다음</button>`});
+  `, {cta:`<button class="btn-primary" onclick="goNext('attendees')">다음</button>`});
 }
 function renderDeadlinePicker(){
   const items = DEADLINES.map(d=>`<div class="option-item ${state.organizer.deadline===d?'selected':''}" onclick="pickDeadline('${d}')">${d}</div>`).join('');
@@ -668,10 +720,14 @@ function renderAttendees(){
     <div class="field-label">참석자</div>
     <div class="input-box" style="cursor:text;">
       <input id="attendeeSearchInput" placeholder="이메일 혹은 이름으로 검색할 수 있어요" value="${o.search}" oninput="handleAttendeeInput(this.value)">
-      <span>🔍</span>
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="6" stroke="black" stroke-width="1.5"/><path d="M13 13L17 17" stroke="black" stroke-width="1.5" stroke-linecap="round"/></svg>
     </div>
-    <div id="attResultsArea"></div>
-  `, {cta:`<button class="btn-primary" id="attNextBtn" onclick="openSheet('review')">초대 내용확인</button>`});
+    <div id="searchResultsArea" class="scroll-box"></div>
+    <div class="field-label" id="addedLabelRow" style="display:flex;justify-content:space-between;align-items:center;">
+      <span>추가된 참석자</span><span id="addedCount" style="color:var(--blue);"></span>
+    </div>
+    <div id="addedAttendeesArea" class="scroll-box-added"></div>
+  `, {cta:`<button class="btn-primary" id="attNextBtn" onclick="goNext('review')">초대 내용확인</button>`});
   updateAttendeeResultsArea();
 }
 function handleAttendeeInput(v){
@@ -702,10 +758,12 @@ function updateAttendeeResultsArea(){
       <span class="tag ${a.level}">${a.level==='required'?'필수':'선택'}</span>
     </div>`).join('');
 
-  const area = document.getElementById('attResultsArea');
-  if(area){
-    area.innerHTML = `${resultsHtml}<div class="field-label">추가된 참석자</div>${addedHtml}`;
-  }
+  const searchArea = document.getElementById('searchResultsArea');
+  if(searchArea) searchArea.innerHTML = resultsHtml;
+  const addedArea = document.getElementById('addedAttendeesArea');
+  if(addedArea) addedArea.innerHTML = addedHtml;
+  const countEl = document.getElementById('addedCount');
+  if(countEl) countEl.textContent = `${o.attendees.length}명`;
   const btn = document.getElementById('attNextBtn');
   if(btn) btn.disabled = !(o.attendees.length > 1);
 }
@@ -725,27 +783,46 @@ function toggleAttendee(name, email, level){
 function renderReview(){
   document.getElementById('sheet').style.maxHeight = '92%';
   const o = state.organizer;
-  const rows = o.attendees.map(a=>`
-    <div class="attendee-row">
+  const rows = o.attendees.map(a=>{
+    if(a.isMe){
+      return `<div class="attendee-row">
+        <span class="name">${a.name}</span>
+        <span class="tag required">필수</span>
+      </div>`;
+    }
+    return `<div class="attendee-row">
       <span class="name">${a.name}</span>
-      <span class="tag ${a.level}">${a.level==='required'?'필수':'선택'}</span>
-    </div>`).join('');
+      <span style="display:flex; align-items:center; gap:10px;">
+        <span class="tag ${a.level}" style="cursor:pointer;" onclick="toggleReviewLevel('${a.name}')">${a.level==='required'?'필수':'선택'}</span>
+        <span style="cursor:pointer; color:var(--text-3); font-size:15px; font-weight:700;" onclick="removeReviewAttendee('${a.name}')">✕</span>
+      </span>
+    </div>`;
+  }).join('');
   document.getElementById('sheet').innerHTML = sheetShell(`
     <h1>이 내용으로 초대할까요?</h1>
-    <p class="desc">필요한 내용이 있다면 설명을 덧붙여주세요.</p>
+    <p class="desc">필요한 내용이 있다면 설명을 덧붙여주세요. 값을 누르면 바로 수정할 수 있어요.</p>
     <div class="field-label">설명</div>
     <div class="input-box" style="color:var(--text-3);">예: 이번 주 안건을 함께 확인해요</div>
     <div class="field-label">참석자</div>
     ${rows}
     <div class="field-label">응답 마감</div>
-    <div class="input-box" style="color:var(--text-3);">${o.deadline}</div>
+    <div class="input-box" style="color:var(--text); cursor:pointer;" onclick="editField('deadline')"><span>${o.deadline}</span><span class="chev">›</span></div>
     <div class="field-label">회의시간</div>
-    <div class="input-box" style="color:var(--text-3);">${o.duration}</div>
+    <div class="input-box" style="color:var(--text); cursor:pointer;" onclick="editField('duration')"><span>${o.duration}</span><span class="chev">›</span></div>
     <div class="field-label">회의 희망 기간</div>
-    <div class="input-box" style="color:var(--text-3);">${fmtDate(o.periodStart)} - ${fmtDate(o.periodEnd)}</div>
+    <div class="input-box" style="color:var(--text); cursor:pointer;" onclick="editField('period')"><span>${fmtDate(o.periodStart)} - ${fmtDate(o.periodEnd)}</span><span class="chev">›</span></div>
     <div class="field-label">회의 제목</div>
-    <div class="input-box" style="color:var(--text-3);">${o.title}</div>
+    <div class="input-box" style="color:var(--text); cursor:pointer;" onclick="editField('title')"><span>${o.title}</span><span class="chev">›</span></div>
   `, {cta:`<button class="btn-primary" onclick="sendInvite()">초대 보내기</button>`});
+}
+function toggleReviewLevel(name){
+  const a = state.organizer.attendees.find(x=>x.name===name);
+  if(a) a.level = a.level==='required' ? 'optional' : 'required';
+  render();
+}
+function removeReviewAttendee(name){
+  state.organizer.attendees = state.organizer.attendees.filter(x=>x.name!==name);
+  render();
 }
 function sendInvite(){
   state.organizer.inviteSent = true;
@@ -806,7 +883,7 @@ function renderRecommend(){
   const cards = RECOMMEND.map((r,idx)=>`
     <div class="rec-card ${o.recSelected===idx?'selected':''}" onclick="selectRec(${idx})">
       <span class="rec-badge ${o.recSelected===idx?'':'dim'}">${r.rank}순위</span>
-      <div class="rec-time">${r.label}</div>
+      <div class="rec-time">${fmtRecLabel(r)}</div>
       <div class="rec-sub">${r.sub}</div>
     </div>`).join('');
   document.getElementById('sheet').innerHTML = sheetShell(`
@@ -834,14 +911,20 @@ function renderConfirmed(){
     <h1>회의 시간을 정했어요</h1>
     <p class="desc">참석자에게 확정 시간과 이유를 함께 알려드려요.</p>
     <div class="confirm-box">
-      <div class="confirm-date">7월 16일 목요일<br>${r.label.split(' ').slice(1).join(' ')}</div>
+      <div class="confirm-date">${fmtRecFullDate(r)}<br>${r.time}</div>
       <div class="why-box">
         <div class="q">왜 이 시간인가요?</div>
         <div class="a">${r.sub}</div>
       </div>
     </div>
     <p style="font-size:13px;color:var(--text-2);">선호가 반영되지 않은 참석자에게는 개인별 사유를 따로 안내해요.</p>
-  `, {cta:`<button class="btn-primary" onclick="closeSheet()">캘린더에서 보기</button>`});
+  `, {cta:`<button class="btn-primary" onclick="viewOnCalendar(${state.organizer.recSelected})">캘린더에서 보기</button>`});
+}
+function viewOnCalendar(recIdx){
+  const r = RECOMMEND[recIdx];
+  const day = parseInt(r.date.split('/')[1], 10);
+  state.calendarEvent = {day, title: state.organizer.title || '회의'};
+  closeSheet();
 }
 function renderAutoConfirmed(){
   document.getElementById('sheet').style.maxHeight = '65%';
@@ -850,12 +933,12 @@ function renderAutoConfirmed(){
     <h1>설정한 기준에 따라 확정했어요</h1>
     <p class="desc">답변 마감이 지나, 미리 동의한 기준에 따라<br>1순위 시간으로 정했어요.</p>
     <div class="field-label" style="margin-top:0;">주간 싱크 회의</div>
-    <div class="input-box" style="color:var(--text);">확정 시간 · ${r.label}</div>
+    <div class="input-box" style="color:var(--text);">확정 시간 · ${fmtRecFullDate(r)} ${r.time}</div>
     <div class="field-label">확정된 이유</div>
     <div class="why-box">
       <div class="a">1. 응답 마감이 지났어요<br>2. 주최자가 직접 확정하지 않았어요<br>3. 1순위 후보가 필수 참석자 모두 가능한 시간이었어요</div>
     </div>
-  `, {cta:`<button class="btn-primary" onclick="closeSheet()">캘린더에서 보기</button>`});
+  `, {cta:`<button class="btn-primary" onclick="viewOnCalendar(0)">캘린더에서 보기</button>`});
 }
 
 // ======================= PARTICIPANT: INTRO =======================
@@ -888,6 +971,36 @@ const GRID_META = {
   avoid:   {title:'가능하지만 피하고 싶은<br>시간이 있나요?', desc:'없다면 바로 다음으로 넘어가도 괜찮아요.', next:'pPrefer'},
   prefer:  {title:'가장 편한 시간은<br>언제인가요?', desc:'가능하다면 이 시간을 먼저 고려할게요.', next:'pSummary'},
 };
+function cellDisplayClass(v, step){
+  if(step==='unavail'){
+    if(v==='locked') return 'locked';
+    return v==='unavail' ? 'on-unavail' : '';
+  }
+  if(step==='avoid'){
+    if(v==='locked' || v==='unavail') return 'grey-unavail';
+    return v==='avoid' ? 'on-avoid' : '';
+  }
+  if(step==='prefer'){
+    if(v==='locked' || v==='unavail') return 'grey-unavail';
+    if(v==='avoid') return 'readonly-avoid';
+    return v==='prefer' ? 'on-prefer' : '';
+  }
+  return '';
+}
+function allCellClass(day, hours, g, step){
+  const classes = hours.map(h => cellDisplayClass(g.cell[day+'-'+h], step));
+  const neutralClass = step==='unavail' ? 'locked' : 'grey-unavail';
+  if(classes.every(c => c===neutralClass)) return neutralClass;
+  if(step==='prefer'){
+    const allPinkOrNeutral = classes.every(c => c==='readonly-avoid' || c===neutralClass);
+    if(allPinkOrNeutral && classes.some(c=>c==='readonly-avoid')) return 'readonly-avoid';
+  }
+  const stepClass = {unavail:'on-unavail', avoid:'on-avoid', prefer:'on-prefer'}[step];
+  const allStepOrNeutral = classes.every(c => c===stepClass || c===neutralClass);
+  const hasAny = classes.some(c => c===stepClass);
+  if(allStepOrNeutral && hasAny) return stepClass;
+  return '';
+}
 let dragPaint = null;
 function renderPGrid(step){
   document.getElementById('sheet').style.maxHeight = '92%';
@@ -898,20 +1011,7 @@ function renderPGrid(step){
   const dots = [0,1,2].map(i=>`<span class="${i===dotIdx?'on':''}"></span>`).join('');
 
   function cellClass(day, hour){
-    const key = day+'-'+hour;
-    const v = g.cell[key];
-    if(v==='locked') return 'locked';
-    if(step==='unavail'){ return v==='unavail' ? 'on-unavail' : ''; }
-    if(step==='avoid'){
-      if(v==='unavail') return 'locked';
-      return v==='avoid' ? 'on-avoid' : '';
-    }
-    if(step==='prefer'){
-      if(v==='unavail') return 'locked';
-      if(v==='avoid') return 'readonly-avoid';
-      return v==='prefer' ? 'on-prefer' : '';
-    }
-    return '';
+    return cellDisplayClass(g.cell[day+'-'+hour], step);
   }
   function isInteractive(day, hour){
     const v = g.cell[day+'-'+hour];
@@ -925,8 +1025,7 @@ function renderPGrid(step){
   const rows = ['전체', ...hours].map(rowLabel=>{
     if(rowLabel==='전체'){
       return `<div class="row-label">전체</div>` + DAYS.map(d=>{
-        const allLocked = hours.every(h=> g.cell[d+'-'+h]==='locked');
-        const cls = allLocked ? 'locked' : '';
+        const cls = allCellClass(d, hours, g, step);
         return `<div class="g-cell ${cls}" data-col="${d}" data-all="1"></div>`;
       }).join('');
     }
@@ -942,12 +1041,22 @@ function renderPGrid(step){
     <p class="desc">${meta.desc}</p>
     <div class="grid-wrap" id="gridWrap">
       <div class="grid-table">${headerRow}${rows}</div>
-      <div class="expand-row" onclick="toggleExpand()">${g.expanded?'시간대 접기 ^':'시간대 더보기 ⌄'}</div>
+      <div class="expand-row" onclick="toggleExpand()">
+        <span>${g.expanded?'시간대 접기':'시간대 더보기'}</span>
+        <svg width="10" height="6" viewBox="0 0 10 6" fill="none" style="transform:${g.expanded?'rotate(180deg)':'none'};">
+          <path d="M1 1L5 5L9 1" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </div>
     </div>
-  `, {cta:`<button class="btn-primary" onclick="openSheet('${meta.next}')">다음</button>`});
+  `, {cta:`<button class="btn-primary" onclick="goNextGrid('${meta.next}')">다음</button>`});
 
   attachGridEvents(step, isInteractive);
 }
+function goNextGrid(nextScreen){
+  if(state.pEditReturn){ state.pEditReturn = false; openSheet('pSummary'); }
+  else { openSheet(nextScreen); }
+}
+function editParticipantField(screen){ state.pEditReturn = true; openSheet(screen); }
 function toggleExpand(){ state.participant.grid.expanded = !state.participant.grid.expanded; render(); }
 
 function attachGridEvents(step, isInteractive){
@@ -999,17 +1108,13 @@ function renderGridOnly(step, isInteractive){
   document.querySelectorAll('#gridWrap .g-cell[data-day]').forEach(cellEl=>{
     const day = cellEl.dataset.day, hour = cellEl.dataset.hour;
     const v = g.cell[day+'-'+hour];
-    let cls = 'g-cell';
-    if(v==='locked') cls+=' locked';
-    else if(step==='unavail' && v==='unavail') cls+=' on-unavail';
-    else if(step==='avoid'){ if(v==='unavail') cls+=' locked'; else if(v==='avoid') cls+=' on-avoid'; }
-    else if(step==='prefer'){ if(v==='unavail') cls+=' locked'; else if(v==='avoid') cls+=' readonly-avoid'; else if(v==='prefer') cls+=' on-prefer'; }
-    cellEl.className = cls;
+    const cls = cellDisplayClass(v, step);
+    cellEl.className = 'g-cell' + (cls ? ' '+cls : '');
   });
   document.querySelectorAll('#gridWrap .g-cell[data-all]').forEach(cellEl=>{
     const day = cellEl.dataset.col;
-    const allLocked = hours.every(h=> g.cell[day+'-'+h]==='locked');
-    cellEl.className = 'g-cell' + (allLocked?' locked':'');
+    const cls = allCellClass(day, hours, g, step);
+    cellEl.className = 'g-cell' + (cls ? ' '+cls : '');
   });
 }
 
@@ -1047,10 +1152,10 @@ function renderPSummary(){
     body = `<div class="summary-box"><div class="h">아무 때나 괜찮아요</div><div class="v">동료들이 정하는 시간에 맞출게요.</div></div>`;
   } else {
     body = `
-      <div class="summary-box"><div class="h">불가능</div><div class="v">${summarizeRange('unavail')}</div></div>
-      <div class="summary-box"><div class="h">피하고 싶은 시간</div><div class="v">${summarizeRange('avoid')}</div></div>
-      <div class="summary-box"><div class="h">선호 시간</div><div class="v">${summarizeRange('prefer')}</div></div>
-      <p style="font-size:13px;color:var(--text-2);">선호가 반영되지 않을 때<br>"필수 참석자 4명이 모두 가능한 가장 빠른 시간이어서 이 시간으로 정했어요."처럼 개인별 사유를 알려줘요.</p>
+      <div class="summary-box" style="cursor:pointer;" onclick="editParticipantField('pUnavail')"><div class="h">불가능</div><div class="v">${summarizeRange('unavail')}</div></div>
+      <div class="summary-box" style="cursor:pointer;" onclick="editParticipantField('pAvoid')"><div class="h">피하고 싶은 시간</div><div class="v">${summarizeRange('avoid')}</div></div>
+      <div class="summary-box" style="cursor:pointer;" onclick="editParticipantField('pPrefer')"><div class="h">선호 시간</div><div class="v">${summarizeRange('prefer')}</div></div>
+      <p style="font-size:13px;color:var(--text-2);">항목을 누르면 해당 단계로 돌아가 수정할 수 있어요.<br>선호가 반영되지 않을 때 "필수 참석자 4명이 모두 가능한 가장 빠른 시간이어서 이 시간으로 정했어요."처럼 개인별 사유를 알려줘요.</p>
     `;
   }
   document.getElementById('sheet').innerHTML = sheetShell(`
