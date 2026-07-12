@@ -3,6 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
 <title>회의 잡기 - 프로토타입</title>
 <style>
   :root{
@@ -22,7 +23,7 @@
     --safe-top:44px;
   }
   *{box-sizing:border-box; -webkit-tap-highlight-color:transparent;}
-  html,body{margin:0;padding:0;background:#000;font-family:-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo","Pretendard",sans-serif;}
+  html,body{margin:0;padding:0;background:#000;font-family:'Pretendard',-apple-system,BlinkMacSystemFont,"Apple SD Gothic Neo",sans-serif;}
   body{display:flex;align-items:center;justify-content:center;min-height:100vh;padding:24px 0;}
 
   .phone{
@@ -58,27 +59,28 @@
     color:#fff;border:none;display:flex;align-items:center;justify-content:center;
     cursor:pointer;
   }
-  .cal-month{font-size:32px; font-weight:800; padding:14px 20px 6px; color:var(--text);}
+  .cal-month{font-size:32px; font-weight:600; padding:14px 20px 6px; color:var(--text);}
   .cal-weekdays{display:grid; grid-template-columns:repeat(7,1fr); padding:0 12px; margin-top:6px;}
   .cal-weekdays span{text-align:center; font-size:13px; color:var(--text-3); padding:6px 0;}
-  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr);}
+  .cal-grid{display:grid; grid-template-columns:repeat(7,1fr); grid-auto-rows:74px;}
   .cal-cell{
-    text-align:center; padding:10px 0 14px; font-size:17px; color:var(--text); border-top:1px solid var(--border);
-    position:relative; display:flex; flex-direction:column; align-items:center; gap:3px;
+    text-align:center; padding:10px 0 6px; font-size:17px; color:var(--text); border-top:1px solid var(--border);
+    position:relative; display:flex; flex-direction:column; align-items:center; gap:3px; height:74px; box-sizing:border-box;
   }
   .cal-cell.dim{color:var(--text-3);}
   .cal-cell .num{display:inline-flex;align-items:center;justify-content:center;width:30px;height:30px;border-radius:50%;}
   .cal-cell.today .num{background:var(--blue); color:#fff; font-weight:600;}
   .cal-event-chip{
     display:flex; align-items:center; gap:2px; background:var(--blue-light); color:var(--blue);
-    font-size:10px; font-weight:600; border-radius:5px; padding:2px 4px; max-width:100%;
-    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    font-size:10px; font-weight:600; border-radius:5px; padding:2px 4px; max-width:90%; height:16px;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis; box-sizing:border-box;
   }
+  .cal-event-chip.empty{ visibility:hidden; }
   .cal-footer{position:absolute; bottom:28px; left:0; right:0; display:flex; align-items:center; justify-content:space-between; padding:0 24px;}
   .today-pill{background:var(--fill); color:var(--blue); font-weight:600; border:none; border-radius:20px; padding:10px 18px; font-size:15px;}
   .role-switch{
     position:absolute; top:6px; right:16px; font-size:11px; color:var(--blue); background:none;border:none;
-    text-decoration:underline; z-index:600; cursor:pointer;
+    text-decoration:underline; z-index:600; cursor:pointer; display:none;
   }
 
   /* ---------- Bottom Sheet / Overlay ---------- */
@@ -95,15 +97,22 @@
     padding-bottom:24px;
   }
   .sheet.show{transform:translateY(0);}
+  .sheet.floating-menu{
+    left:auto; bottom:auto; width:210px; border-radius:16px; max-height:none; padding-bottom:6px;
+    transform:scale(0.92); transform-origin:top right; opacity:0;
+    transition:transform .16s ease, opacity .16s ease;
+    box-shadow:0 12px 32px rgba(0,0,0,0.22);
+  }
+  .sheet.floating-menu.show{ transform:scale(1); opacity:1; }
   .sheet-top{display:flex; align-items:center; justify-content:flex-end; padding:16px 16px 0;}
   .sheet-close{background:none;border:none;font-size:22px;color:var(--text);cursor:pointer; padding:4px 8px;}
-  .sheet-body{padding:4px 24px 20px; overflow-y:auto; flex:1;}
-  .sheet-body h1{font-size:24px; font-weight:800; margin:6px 0 6px; line-height:1.3;}
+  .sheet-body{padding:4px 24px 20px; overflow-y:auto; flex:1; transition:opacity .16s ease;}
+  .sheet-body h1{font-size:24px; font-weight:600; margin:6px 0 6px; line-height:1.3;}
   .sheet-body p.desc{font-size:14px; color:var(--text-2); margin:0 0 22px;}
   .sheet-cta{padding:0 24px;}
   .btn-primary{
     width:100%; background:var(--blue); color:#fff; border:none; border-radius:14px;
-    padding:16px 0; font-size:16px; font-weight:700; cursor:pointer;
+    padding:16px 0; font-size:16px; font-weight:600; cursor:pointer;
   }
   .btn-primary:disabled{background:var(--fill-2); color:var(--text-3); cursor:default;}
   .btn-secondary{
@@ -111,11 +120,17 @@
   }
 
   /* ---------- Onboarding ---------- */
-  .onb-dots{display:flex; gap:6px; justify-content:center; margin:8px 0 40px;}
-  .onb-dots span{width:8px;height:6px;border-radius:3px;background:var(--fill-2);}
-  .onb-dots span.on{background:var(--text); width:32px;}
-  .onb-slide{text-align:center; padding-top:20px;}
-  .onb-slide h1{font-size:26px; font-weight:800; margin-bottom:14px;}
+  .onb-dots-track{ position:relative; width:fit-content; margin:8px auto 20px; }
+  .onb-dots-bg{ display:flex; gap:14px; }
+  .onb-dot{ width:8px; height:6px; border-radius:3px; background:var(--fill-2); }
+  .onb-dots-active{
+    position:absolute; top:0; left:0; width:24px; height:6px; border-radius:3px; background:var(--text);
+    transition:transform .3s cubic-bezier(.25,.1,.25,1); will-change:transform;
+  }
+  .onb-viewport{ overflow:hidden; width:100%; touch-action:pan-y; }
+  .onb-track{ display:flex; }
+  .onb-slide{ flex:0 0 100%; width:100%; box-sizing:border-box; text-align:center; padding:20px 4px 0; }
+  .onb-slide h1{font-size:26px; font-weight:600; margin-bottom:14px;}
   .onb-slide p{font-size:15px; color:var(--text-2); line-height:1.5;}
 
   /* ---------- Form elements ---------- */
@@ -124,8 +139,10 @@
   .input-box{
     border:1px solid var(--border); border-radius:12px; padding:14px 16px; font-size:16px;
     display:flex; align-items:center; justify-content:space-between; cursor:pointer; color:var(--text);
-    background:#fff;
+    background:#fff; transition:border-color .12s ease;
   }
+  .input-box:focus-within{ border-color:var(--blue); }
+  .input-box.focused{ border-color:var(--blue); }
   .input-box input{border:none; outline:none; font-size:16px; width:100%; font-family:inherit; color:var(--text);}
   .input-box input::placeholder{color:var(--text-3);}
   .input-box.placeholder-color{color:var(--text-3);}
@@ -137,8 +154,8 @@
   /* ---------- Option list (bottom sheet picker) ---------- */
   .option-list{padding:6px 0 0;}
   .option-item{
-    padding:18px 0; font-size:17px; color:var(--text); border-bottom:1px solid var(--border);
-    cursor:pointer;
+    padding:17px 0; font-size:17px; color:var(--text); border-bottom:1px solid var(--border);
+    cursor:pointer; display:flex; align-items:center; justify-content:space-between; min-height:24px;
   }
   .option-item:last-child{border-bottom:none;}
   .option-item.selected{background:var(--blue-light); border-radius:10px; padding-left:12px; margin:0 -12px; padding-right:12px;}
@@ -146,14 +163,16 @@
   /* ---------- Mini calendar picker ---------- */
   .mini-cal-head{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;}
   .mini-cal-head button{background:none;border:none;font-size:20px;color:var(--text);cursor:pointer;}
-  .mini-cal-head span{font-size:19px; font-weight:700;}
+  .mini-cal-head span{font-size:19px; font-weight:600;}
   .mini-cal-grid{display:grid; grid-template-columns:repeat(7,1fr); text-align:center;}
   .mini-cal-grid .wd{font-size:13px; color:var(--text-3); padding:8px 0;}
   .mini-cal-grid .day{padding:6px 0; font-size:16px; color:var(--text); cursor:pointer;}
   .mini-cal-grid .day.dim{color:var(--text-3);}
   .mini-cal-grid .day.in-range{background:var(--blue-light);}
+  .mini-cal-grid .day.in-range.range-start{ border-top-left-radius:18px; border-bottom-left-radius:18px; }
+  .mini-cal-grid .day.in-range.range-end{ border-top-right-radius:18px; border-bottom-right-radius:18px; }
   .mini-cal-grid .day .num-circle{display:flex; align-items:center; justify-content:center; width:30px; height:30px; border-radius:50%; margin:0 auto;}
-  .mini-cal-grid .day.today .num-circle{color:var(--blue); font-weight:700;}
+  .mini-cal-grid .day.today .num-circle{color:var(--blue); font-weight:600;}
   .mini-cal-grid .day.range-start .num-circle, .mini-cal-grid .day.range-end .num-circle{
     background:var(--blue); color:#fff;
   }
@@ -166,6 +185,12 @@
   .search-result .info .mail{font-size:13px; color:var(--text-2);}
   .scroll-box{max-height:270px; overflow-y:auto;}
   .scroll-box-added{max-height:216px; overflow-y:auto;}
+  .attendee-search-wrap{ position:relative; }
+  .search-dropdown{
+    position:absolute; top:calc(100% + 8px); left:0; right:0; z-index:40;
+    background:#fff; border-radius:14px; box-shadow:0 10px 28px rgba(0,0,0,0.18);
+    max-height:270px; overflow-y:auto; padding:2px 16px; display:none;
+  }
   .chip-group{display:flex; gap:8px;}
   .chip{
     border-radius:20px; padding:6px 14px; font-size:13px; border:1.5px solid var(--border); color:var(--text-2);
@@ -179,7 +204,7 @@
     border-radius:12px; margin-bottom:8px;
   }
   .attendee-row .name{font-size:15px; font-weight:600;}
-  .tag{font-size:12px; font-weight:700; padding:4px 10px; border-radius:8px;}
+  .tag{font-size:12px; font-weight:600; padding:4px 10px; border-radius:8px;}
   .tag.required{color:var(--blue); background:var(--blue-light);}
   .tag.optional{color:var(--text-2); background:#fff; border:1px solid var(--border);}
 
@@ -192,7 +217,7 @@
     display:flex; align-items:center; justify-content:space-between; padding:14px 0; border-bottom:1px solid var(--border);
   }
   .status-row:first-child{border-top:1px solid var(--border);}
-  .status-done{color:var(--green); font-weight:700; font-size:14px;}
+  .status-done{color:var(--green); font-weight:600; font-size:14px;}
   .status-pending{color:var(--text-2); font-weight:600; font-size:14px;}
 
   /* ---------- Recommended time cards ---------- */
@@ -201,18 +226,18 @@
   }
   .rec-card.selected{border-color:var(--blue); background:var(--blue-light);}
   .rec-badge{
-    display:inline-block; font-size:12px; font-weight:700; color:#fff; background:var(--blue);
+    display:inline-block; font-size:12px; font-weight:600; color:#fff; background:var(--blue);
     border-radius:8px; padding:3px 10px; margin-bottom:10px;
   }
   .rec-badge.dim{background:var(--fill-2); color:var(--text-2);}
-  .rec-time{font-size:19px; font-weight:800; margin-bottom:4px;}
+  .rec-time{font-size:19px; font-weight:600; margin-bottom:4px;}
   .rec-sub{font-size:13px; color:var(--text-2);}
 
   /* ---------- Confirmed screen ---------- */
   .confirm-box{text-align:center; padding:30px 0;}
-  .confirm-date{font-size:24px; font-weight:800; margin-bottom:24px; line-height:1.4;}
+  .confirm-date{font-size:24px; font-weight:600; margin-bottom:24px; line-height:1.4;}
   .why-box{background:var(--fill); border-radius:12px; padding:16px; text-align:left;}
-  .why-box .q{font-size:14px; font-weight:700; margin-bottom:8px;}
+  .why-box .q{font-size:14px; font-weight:600; margin-bottom:8px;}
   .why-box .a{font-size:13px; color:var(--text-2);}
 
   /* ---------- Toast (push notification style) ---------- */
@@ -222,21 +247,21 @@
     z-index:800; opacity:0; transform:translateY(-20px); transition:all .3s ease;
   }
   .toast.show{opacity:1; transform:translateY(0);}
-  .toast .t-title{font-size:14px; font-weight:700; margin-bottom:2px;}
+  .toast .t-title{font-size:14px; font-weight:600; margin-bottom:2px;}
   .toast .t-body{font-size:13px; color:var(--text-2); line-height:1.4;}
 
   /* ---------- Participant detail ---------- */
   .meeting-hero{padding-top:8px;}
-  .meeting-hero h1{font-size:24px; font-weight:800; margin-bottom:4px;}
+  .meeting-hero h1{font-size:24px; font-weight:600; margin-bottom:4px;}
   .meeting-hero .sub{font-size:13px; color:var(--text-2); margin-bottom:18px;}
   .invited-by{
     display:flex; align-items:center; justify-content:space-between; background:var(--fill);
     border-radius:12px; padding:14px 16px; margin-bottom:16px;
   }
-  .invited-by .name{font-size:15px; font-weight:700;}
+  .invited-by .name{font-size:15px; font-weight:600;}
   .invited-by .sub{font-size:12px; color:var(--text-2); margin:2px 0 0;}
   .attendee-list-box{background:var(--fill); border-radius:12px; padding:16px;}
-  .attendee-list-box .h{font-size:14px; font-weight:700; margin-bottom:10px;}
+  .attendee-list-box .h{font-size:14px; font-weight:600; margin-bottom:10px;}
   .attendee-list-box .p{font-size:14px; color:var(--text); padding:6px 0;}
 
   /* ---------- Time grid ---------- */
@@ -258,7 +283,7 @@
   .anytime-link{position:absolute; bottom:96px; left:0; right:0; text-align:center; font-size:14px; color:var(--text); text-decoration:underline; cursor:pointer;}
 
   .summary-box{background:var(--fill); border-radius:12px; padding:16px; margin-bottom:12px;}
-  .summary-box .h{font-size:15px; font-weight:700; margin-bottom:2px;}
+  .summary-box .h{font-size:15px; font-weight:600; margin-bottom:2px;}
   .summary-box .v{font-size:13px; color:var(--text-2);}
 
   ::-webkit-scrollbar{display:none;}
@@ -308,7 +333,7 @@
 
   <div class="screen-root">
     <div class="calendar" id="calendarLayer"></div>
-    <div class="overlay" id="overlayLayer">
+    <div class="overlay" id="overlayLayer" onclick="handleOverlayBackdropClick(event)">
       <div class="sheet" id="sheet"></div>
     </div>
     <div class="toast" id="toast"></div>
@@ -332,9 +357,12 @@ function generateContacts(count){
 const CONTACTS = generateContacts(200);
 
 const RECOMMEND = [
-  {rank:1, dow:'목', date:'7/16', time:'오후 2:00 - 3:00', sub:'필수 참석자 4명 모두 가능 · 선호 3명 · 기피 1명'},
-  {rank:2, dow:'수', date:'7/15', time:'오후 3:00 - 4:00', sub:'필수 참석자 4명 모두 가능 · 선호 2명 · 기피 1명'},
-  {rank:3, dow:'금', date:'7/17', time:'오전 10:00 - 11:00', sub:'필수 참석자 4명 모두 가능 · 선호 2명 · 기피 2명'},
+  {rank:1, dow:'목', date:'7/16', time:'오후 2:00 - 3:00', sub:'필수 참석자 4명 모두 가능 · 선호 3명 · 기피 1명',
+   reason:'필수 참석자 4명이 모두 가능하고, 선호가 가장 많이 겹치는 시간이어서 이 시간으로 정했어요.'},
+  {rank:2, dow:'수', date:'7/15', time:'오후 3:00 - 4:00', sub:'필수 참석자 4명 모두 가능 · 선호 2명 · 기피 1명',
+   reason:'필수 참석자 4명이 모두 가능한 시간 중, 가장 빠르게 열리는 시간이어서 이 시간으로 정했어요.'},
+  {rank:3, dow:'금', date:'7/17', time:'오전 10:00 - 11:00', sub:'필수 참석자 4명 모두 가능 · 선호 2명 · 기피 2명',
+   reason:'필수 참석자 4명이 모두 가능한 시간이어서 이 시간으로 정했어요.'},
 ];
 function fmtRecLabel(r){ return `${r.dow} ${r.date} ${r.time}`; }
 function fmtRecFullDate(r){ const [m,d]=r.date.split('/'); return `${m}월 ${d}일 ${r.dow}요일`; }
@@ -411,6 +439,11 @@ function openSheet(name){ state.overlay = name; state.sub=null; render(); }
 function closeSheet(){ state.overlay = null; state.sub=null; render(); }
 function openSub(name){ state.sub = name; render(); }
 function closeSub(){ state.sub = null; render(); }
+function handleOverlayBackdropClick(e){
+  if(e.target.id === 'overlayLayer' && state.overlay === 'addMenu'){
+    closeSheet();
+  }
+}
 function goNext(nextScreen){
   if(state.editReturn){ state.editReturn = false; openSheet('review'); }
   else { openSheet(nextScreen); }
@@ -445,11 +478,11 @@ function renderCalendar(){
   const rows = CAL_ROWS.map(row => row.map(c=>{
     const cls = ['cal-cell']; if(c.dim) cls.push('dim'); if(c.today) cls.push('today');
     const hasEvent = state.calendarEvent && !c.dim && state.calendarEvent.day === c.d;
-    const chip = hasEvent ? `
-      <div class="cal-event-chip">
+    const chip = `
+      <div class="cal-event-chip ${hasEvent ? '' : 'empty'}" ${hasEvent ? `onclick="openEventDetail(event)" style="cursor:pointer;"` : ''}>
         <svg width="10" height="10" viewBox="0 0 18 18" fill="none"><rect x="1" y="3" width="16" height="13" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M1 7H17" stroke="currentColor" stroke-width="1.6"/><path d="M5 1V4M13 1V4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
-        <span>${truncateTitle(state.calendarEvent.title, 4)}</span>
-      </div>` : '';
+        <span>${hasEvent ? truncateTitle(state.calendarEvent.title, 4) : ''}</span>
+      </div>`;
     return `<div class="${cls.join(' ')}"><span class="num">${c.d}</span>${chip}</div>`;
   }).join('')).join('');
 
@@ -472,7 +505,7 @@ function renderCalendar(){
     </div>
   `;
   document.getElementById('addBtn').onclick = ()=> openSheet('addMenu');
-  cal.classList.toggle('dimmed', !!state.overlay);
+  cal.classList.toggle('dimmed', !!state.overlay && state.overlay !== 'addMenu');
 }
 
 // ======================= SHEET DISPATCH =======================
@@ -488,7 +521,14 @@ function render(){
     return;
   }
   overlayLayer.classList.add('active');
-  sheet.classList.add('show');
+  sheet.style.height = '';
+  sheet.style.top = '';
+  sheet.style.right = '';
+  const isFloating = state.overlay === 'addMenu';
+  sheet.classList.toggle('floating-menu', isFloating);
+  if(!isFloating){
+    sheet.classList.add('show');
+  }
 
   const screens = {
     addMenu: renderAddMenu,
@@ -508,8 +548,15 @@ function render(){
     pAvoid: ()=>renderPGrid('avoid'),
     pPrefer: ()=>renderPGrid('prefer'),
     pSummary: renderPSummary,
+    pConfirmedFinal: renderPConfirmedFinal,
+    eventDetail: renderEventDetail,
   };
   (screens[state.overlay] || (()=>{}))();
+  const body = sheet.querySelector('.sheet-body');
+  if(body){
+    body.style.opacity = '0';
+    requestAnimationFrame(()=>{ body.style.opacity = '1'; });
+  }
   renderSub();
 }
 
@@ -533,7 +580,7 @@ function renderSub(){
   if(!state.sub) return;
   const layer = el(`<div id="subSheetLayer" style="position:absolute;inset:0;z-index:200;"></div>`);
   document.querySelector('.phone').appendChild(layer);
-  const sub = el(`<div class="sheet show" style="position:absolute;left:0;right:0;bottom:0;max-height:70%;"></div>`);
+  const sub = el(`<div class="sheet" style="position:absolute;left:0;right:0;bottom:0;max-height:70%;"></div>`);
   layer.appendChild(sub);
   document.getElementById('sheet').style.filter = 'brightness(0.85)';
 
@@ -543,67 +590,169 @@ function renderSub(){
     periodPicker: renderPeriodPicker,
   };
   sub.innerHTML = (subs[state.sub] || (()=>''))();
+  requestAnimationFrame(()=>{ sub.classList.add('show'); });
 }
 
 // ======================= 1) ADD MENU =======================
 function renderAddMenu(){
-  document.getElementById('sheet').style.maxHeight = '40%';
-  document.getElementById('sheet').innerHTML = sheetShell(`
-    <div class="option-list" style="margin-top:0;">
+  const sheet = document.getElementById('sheet');
+  sheet.innerHTML = `
+    <div class="option-list" style="margin:6px 0; padding:0 16px;">
       <div class="option-item" onclick="closeSheet()">일정 만들기</div>
       <div class="option-item" onclick="closeSheet()">할 일 만들기</div>
       <div class="option-item" style="display:flex;justify-content:space-between;align-items:center;" onclick="startOnboarding()">
-        회의 잡기 <span style="background:var(--blue-light);color:var(--blue);font-size:11px;font-weight:800;padding:3px 8px;border-radius:6px;">New</span>
+        회의 잡기 <span style="background:var(--blue-light);color:var(--blue);font-size:11px;font-weight:600;padding:3px 8px;border-radius:6px;">New</span>
       </div>
     </div>
-  `);
+  `;
+  requestAnimationFrame(()=>{
+    const btn = document.getElementById('addBtn');
+    const phone = document.querySelector('.phone');
+    if(btn && phone){
+      const btnRect = btn.getBoundingClientRect();
+      const phoneRect = phone.getBoundingClientRect();
+      sheet.style.top = (btnRect.bottom - phoneRect.top + 8) + 'px';
+      sheet.style.right = (phoneRect.right - btnRect.right) + 'px';
+    }
+    sheet.classList.add('show');
+  });
 }
 function startOnboarding(){ state.organizer.onboardingIndex = 0; openSheet('onboarding'); }
 
 // ======================= 2) ONBOARDING =======================
 const ONB_SLIDES = [
-  {h:'잡기 힘든 회의,<br>이제 쉽게 정해보세요', p:'누가 꼭 참석해야 하는지와<br>원하는 시간을 함께 고려해요.'},
-  {h:'동료들이 답하면<br>회의 시간을 찾아드려요', p:'모든 답변을 모아<br>회의하기 좋은 시간 3개를 추천해드려요.'},
-  {h:'회의 잡으러<br>가볼까요?', p:'회의를 만들고 동료에게 공유하면<br>일정 조율이 시작돼요.'},
+  {h:'잡기 힘든 회의,<br>이제 쉽게 정해보세요', p:'누가 꼭 참석해야 하는지와<br>원하는 시간을 함께 고려해요.',
+   graphic:`<svg width="200" height="200" viewBox="0 0 200 200" fill="none">
+     <circle cx="100" cy="100" r="92" fill="#EAF3FF"/>
+     <rect x="52" y="58" width="96" height="88" rx="12" fill="white" stroke="#007AFF" stroke-width="3"/>
+     <rect x="52" y="58" width="96" height="26" rx="12" fill="#007AFF"/>
+     <rect x="68" y="46" width="6" height="18" rx="3" fill="#007AFF"/>
+     <rect x="126" y="46" width="6" height="18" rx="3" fill="#007AFF"/>
+     <rect x="66" y="98" width="18" height="14" rx="3" fill="#EAF3FF"/>
+     <rect x="91" y="98" width="18" height="14" rx="3" fill="#EAF3FF"/>
+     <rect x="116" y="98" width="18" height="14" rx="3" fill="#007AFF"/>
+     <rect x="66" y="120" width="18" height="14" rx="3" fill="#EAF3FF"/>
+     <rect x="91" y="120" width="18" height="14" rx="3" fill="#EAF3FF"/>
+     <rect x="116" y="120" width="18" height="14" rx="3" fill="#EAF3FF"/>
+   </svg>`},
+  {h:'동료들이 답하면<br>회의 시간을 찾아드려요', p:'모든 답변을 모아<br>회의하기 좋은 시간 3개를 추천해드려요.',
+   graphic:`<svg width="200" height="200" viewBox="0 0 200 200" fill="none">
+     <circle cx="100" cy="100" r="92" fill="#EAF3FF"/>
+     <circle cx="72" cy="82" r="20" fill="white" stroke="#007AFF" stroke-width="3"/>
+     <circle cx="128" cy="82" r="20" fill="white" stroke="#007AFF" stroke-width="3"/>
+     <circle cx="100" cy="122" r="20" fill="#007AFF"/>
+     <path d="M92 122L98 128L110 114" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+     <path d="M64 82L68 86L78 74" stroke="#007AFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+     <path d="M120 82L124 86L134 74" stroke="#007AFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+   </svg>`},
+  {h:'회의 잡으러<br>가볼까요?', p:'회의를 만들고 동료에게 공유하면<br>일정 조율이 시작돼요.',
+   graphic:`<svg width="200" height="200" viewBox="0 0 200 200" fill="none">
+     <circle cx="100" cy="100" r="92" fill="#EAF3FF"/>
+     <path d="M100 50L118 96L100 88L82 96Z" fill="#007AFF"/>
+     <path d="M100 88L100 150" stroke="#007AFF" stroke-width="4" stroke-linecap="round"/>
+     <path d="M82 96L70 122" stroke="#007AFF" stroke-width="4" stroke-linecap="round"/>
+     <path d="M118 96L130 122" stroke="#007AFF" stroke-width="4" stroke-linecap="round"/>
+   </svg>`},
 ];
 function renderOnboarding(){
-  document.getElementById('sheet').style.maxHeight = '92%';
+  document.getElementById('sheet').style.maxHeight = 'min(700px, 92%)';
+  document.getElementById('sheet').style.height = '';
   const i = state.organizer.onboardingIndex;
-  const dots = ONB_SLIDES.map((_,idx)=>`<span class="${idx===i?'on':''}" onclick="setOnbIndex(${idx})"></span>`).join('');
+  const dots = ONB_SLIDES.map(()=>`<span class="onb-dot"></span>`).join('');
+  const slides = ONB_SLIDES.map(s=>`
+    <div class="onb-slide">
+      <div style="display:flex; justify-content:center; margin-bottom:24px;">${s.graphic}</div>
+      <h1>${s.h}</h1>
+      <p>${s.p}</p>
+    </div>`).join('');
   document.getElementById('sheet').innerHTML = sheetShell(`
-    <div class="onb-dots">${dots}</div>
-    <div class="onb-slide" id="onbTapZone">
-      <h1>${ONB_SLIDES[i].h}</h1>
-      <p>${ONB_SLIDES[i].p}</p>
+    <div class="onb-dots-track" id="onbDotsTrack">
+      <div class="onb-dots-bg">${dots}</div>
+      <div class="onb-dots-active" id="onbActivePill"></div>
+    </div>
+    <div class="onb-viewport" id="onbViewport">
+      <div class="onb-track" id="onbTrack">${slides}</div>
     </div>
   `, {cta:`<button class="btn-primary" onclick="openSheet('title')">회의 잡기 시작</button>`});
+
+  const track = document.getElementById('onbTrack');
+  track.style.transition = 'none';
+  track.style.transform = `translateX(-${i*100}%)`;
+  void track.offsetWidth;
+  track.style.transition = 'transform .34s cubic-bezier(.25,.1,.25,1)';
+  positionOnbPill(true);
   attachOnbEvents();
 }
-function setOnbIndex(i){ state.organizer.onboardingIndex = i; render(); }
-function prevOnb(){ state.organizer.onboardingIndex = Math.max(0, state.organizer.onboardingIndex-1); render(); }
-function nextOnb(){ state.organizer.onboardingIndex = Math.min(ONB_SLIDES.length-1, state.organizer.onboardingIndex+1); render(); }
-let onbStartX = null;
+function positionOnbPill(instant){
+  const pill = document.getElementById('onbActivePill');
+  const dotsTrack = document.getElementById('onbDotsTrack');
+  if(!pill || !dotsTrack) return;
+  const dots = dotsTrack.querySelectorAll('.onb-dot');
+  const i = state.organizer.onboardingIndex;
+  if(!dots[i]) return;
+  if(instant) pill.style.transition = 'none';
+  const trackRect = dotsTrack.getBoundingClientRect();
+  const dotRect = dots[i].getBoundingClientRect();
+  const center = dotRect.left - trackRect.left + dotRect.width/2;
+  pill.style.transform = `translateX(${center - 12}px)`;
+  if(instant){
+    void pill.offsetWidth;
+    pill.style.transition = 'transform .3s cubic-bezier(.25,.1,.25,1)';
+  }
+}
+function setOnbIndex(i){ goToOnbIndex(i); }
+function goToOnbIndex(newIndex){
+  newIndex = Math.max(0, Math.min(ONB_SLIDES.length-1, newIndex));
+  state.organizer.onboardingIndex = newIndex;
+  const track = document.getElementById('onbTrack');
+  if(track) track.style.transform = `translateX(-${newIndex*100}%)`;
+  positionOnbPill(false);
+}
+function prevOnb(){ goToOnbIndex(state.organizer.onboardingIndex - 1); }
+function nextOnb(){ goToOnbIndex(state.organizer.onboardingIndex + 1); }
+let onbDragStartX = null, onbDragging = false;
 function attachOnbEvents(){
-  const zone = document.getElementById('onbTapZone');
-  if(!zone) return;
-  zone.addEventListener('pointerdown', (e)=>{ onbStartX = e.clientX; });
-  zone.addEventListener('pointerup', (e)=>{
-    if(onbStartX===null) return;
-    const dx = e.clientX - onbStartX;
-    const rect = zone.getBoundingClientRect();
-    if(Math.abs(dx) > 40){
-      if(dx < 0) nextOnb(); else prevOnb();
-    } else {
-      const x = e.clientX - rect.left;
-      if(x < rect.width/2) prevOnb(); else nextOnb();
+  const zone = document.getElementById('onbViewport');
+  const track = document.getElementById('onbTrack');
+  if(!zone || !track) return;
+  zone.onpointerdown = (e)=>{
+    onbDragStartX = e.clientX;
+    onbDragging = true;
+    track.style.transition = 'none';
+  };
+  zone.onpointermove = (e)=>{
+    if(!onbDragging) return;
+    const i = state.organizer.onboardingIndex;
+    const dx = e.clientX - onbDragStartX;
+    const pct = (dx / zone.clientWidth) * 100;
+    track.style.transform = `translateX(calc(-${i*100}% + ${pct}%))`;
+  };
+  const endDrag = (e)=>{
+    if(!onbDragging) return;
+    onbDragging = false;
+    track.style.transition = 'transform .34s cubic-bezier(.25,.1,.25,1)';
+    const endX = (e.clientX !== undefined) ? e.clientX : onbDragStartX;
+    const dx = endX - onbDragStartX;
+    const width = zone.clientWidth;
+    if(Math.abs(dx) < 6){
+      const rect = zone.getBoundingClientRect();
+      const relX = endX - rect.left;
+      if(relX < rect.width/2) prevOnb(); else nextOnb();
+      return;
     }
-    onbStartX = null;
-  });
+    const threshold = width * 0.18;
+    if(dx <= -threshold) nextOnb();
+    else if(dx >= threshold) prevOnb();
+    else goToOnbIndex(state.organizer.onboardingIndex);
+  };
+  zone.onpointerup = endDrag;
+  zone.onpointerleave = endDrag;
+  zone.onpointercancel = endDrag;
 }
 
 // ======================= 3) TITLE =======================
 function renderTitle(){
-  document.getElementById('sheet').style.maxHeight = '55%';
+  document.getElementById('sheet').style.maxHeight = 'min(700px, 92%)';
   const o = state.organizer;
   document.getElementById('sheet').innerHTML = sheetShell(`
     <h1>어떤 회의인가요?</h1>
@@ -622,14 +771,14 @@ function onTitleInput(v){
 
 // ======================= 4) PERIOD =======================
 function renderPeriod(){
-  document.getElementById('sheet').style.maxHeight = '55%';
+  document.getElementById('sheet').style.maxHeight = 'min(700px, 92%)';
   const o = state.organizer;
   const label = (o.periodStart && o.periodEnd) ? `${fmtDate(o.periodStart)}  -  ${fmtDate(o.periodEnd)}` : 'YYYY.MM.DD  -  YYYY.MM.DD';
   document.getElementById('sheet').innerHTML = sheetShell(`
     <h1>언제 회의하면 좋을까요?</h1>
     <p class="desc">회의가 열릴 수 있는 기간을 골라주세요.</p>
-    <div class="field-label">회의 희망 기간</div>
-    <div class="input-box ${(!o.periodStart)?'placeholder-color':''}" onclick="openPeriodPicker()">
+    <div class="field-label" style="margin-top:0;">회의 희망 기간</div>
+    <div class="input-box ${(!o.periodStart)?'placeholder-color':''} ${state.sub==='periodPicker'?'focused':''}" onclick="openPeriodPicker()">
       <span>${label}</span>
       <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><rect x="1" y="3" width="16" height="13" rx="2" stroke="black" stroke-width="1.3"/><path d="M1 7H17" stroke="black" stroke-width="1.3"/><path d="M5 1V4M13 1V4" stroke="black" stroke-width="1.3" stroke-linecap="round"/></svg>
     </div>
@@ -672,24 +821,37 @@ function pickMiniDate(d, dim){
   const m = state.miniCal;
   if(!m.start || (m.start && m.end)){ m.start = d; m.end = null; }
   else { if(d < m.start){ m.end = m.start; m.start = d; } else { m.end = d; } }
-  render();
+  updateSubContent();
+}
+function updateSubContent(){
+  if(!state.sub) return;
+  const layer = document.getElementById('subSheetLayer');
+  if(!layer) return;
+  const sub = layer.firstElementChild;
+  const subs = {
+    durationPicker: renderDurationPicker,
+    deadlinePicker: renderDeadlinePicker,
+    periodPicker: renderPeriodPicker,
+  };
+  sub.innerHTML = (subs[state.sub] || (()=>''))();
 }
 function confirmPeriod(){
   state.organizer.periodStart = state.miniCal.start;
   state.organizer.periodEnd = state.miniCal.end;
-  closeSub();
+  state.sub = null;
+  goNext('duration');
 }
 
 // ======================= 5) DURATION (dropdown demo) =======================
 const DURATIONS = ['30분','1시간','1시간 반','2시간','직접 정하기'];
 function renderDuration(){
-  document.getElementById('sheet').style.maxHeight = '45%';
+  document.getElementById('sheet').style.maxHeight = 'min(700px, 92%)';
   const o = state.organizer;
   document.getElementById('sheet').innerHTML = sheetShell(`
     <h1>회의는 얼마나 할까요?</h1>
     <p class="desc">필요한 회의 길이를 선택해주세요.</p>
-    <div class="field-label">회의시간</div>
-    <div class="input-box" onclick="openSub('durationPicker')"><span>${o.duration}</span><span class="chev"><svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="#C7C7CC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+    <div class="field-label" style="margin-top:0;">회의시간</div>
+    <div class="input-box ${state.sub==='durationPicker'?'focused':''}" onclick="openSub('durationPicker')"><span>${o.duration}</span><span class="chev"><svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="#C7C7CC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
     <div class="field-label">회의 희망 기간</div>
     <div class="input-box" style="color:var(--text-3);">${fmtDate(o.periodStart)} - ${fmtDate(o.periodEnd)}</div>
     <div class="field-label">회의 제목</div>
@@ -706,17 +868,19 @@ function pickDuration(d){ state.organizer.duration = d; closeSub(); }
 // ======================= 6) DEADLINE (dropdown demo) =======================
 const DEADLINES = ['오늘 퇴근 전(~18:00)','내일 오전 10시','직접 정하기'];
 function renderDeadline(){
-  document.getElementById('sheet').style.maxHeight = '55%';
+  document.getElementById('sheet').style.maxHeight = 'min(700px, 92%)';
   const o = state.organizer;
   document.getElementById('sheet').innerHTML = sheetShell(`
     <h1>언제까지 답을 받을까요?</h1>
     <p class="desc">동료들이 답해야 하는 시간을 정해주세요.</p>
-    <div class="field-label">응답 마감</div>
-    <div class="input-box" onclick="openSub('deadlinePicker')"><span>${o.deadline}</span><span class="chev"><svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="#C7C7CC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
+    <div class="field-label" style="margin-top:0;">응답 마감</div>
+    <div class="input-box ${state.sub==='deadlinePicker'?'focused':''}" onclick="openSub('deadlinePicker')"><span>${o.deadline}</span><span class="chev"><svg width="10" height="6" viewBox="0 0 10 6" fill="none"><path d="M1 1L5 5L9 1" stroke="#C7C7CC" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg></span></div>
     <div class="field-label">회의시간</div>
     <div class="input-box" style="color:var(--text-3);">${o.duration}</div>
     <div class="field-label">회의 희망 기간</div>
     <div class="input-box" style="color:var(--text-3);">${fmtDate(o.periodStart)} - ${fmtDate(o.periodEnd)}</div>
+    <div class="field-label">회의 제목</div>
+    <div class="input-box" style="color:var(--text-3);">${o.title}</div>
   `, {cta:`<button class="btn-primary" onclick="goNext('attendees')">다음</button>`});
 }
 function renderDeadlinePicker(){
@@ -727,27 +891,51 @@ function renderDeadlinePicker(){
 function pickDeadline(d){ state.organizer.deadline = d; closeSub(); }
 
 // ======================= 7) ATTENDEES =======================
+let attendeeDropdownClosed = false;
 function renderAttendees(){
-  document.getElementById('sheet').style.maxHeight = '92%';
+  document.getElementById('sheet').style.maxHeight = 'min(700px, 92%)';
+  attendeeDropdownClosed = false;
   const o = state.organizer;
   document.getElementById('sheet').innerHTML = sheetShell(`
     <h1>누구와 회의할까요?</h1>
     <p class="desc">꼭 필요한 사람과 선택 참석자를 나눠주세요.</p>
-    <div class="field-label">참석자</div>
-    <div class="input-box" style="cursor:text;">
-      <input id="attendeeSearchInput" placeholder="이메일 혹은 이름으로 검색할 수 있어요" value="${o.search}" oninput="handleAttendeeInput(this.value)">
-      <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="6" stroke="black" stroke-width="1.5"/><path d="M13 13L17 17" stroke="black" stroke-width="1.5" stroke-linecap="round"/></svg>
+    <div class="field-label" style="margin-top:0;">참석자</div>
+    <div class="attendee-search-wrap">
+      <div class="input-box" style="cursor:text;">
+        <input id="attendeeSearchInput" placeholder="이메일 혹은 이름으로 검색할 수 있어요" value="${o.search}" oninput="handleAttendeeInput(this.value)" onfocus="reopenAttendeeDropdown()">
+        <svg width="18" height="18" viewBox="0 0 18 18" fill="none"><circle cx="8" cy="8" r="6" stroke="black" stroke-width="1.5"/><path d="M13 13L17 17" stroke="black" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div id="searchResultsArea" class="search-dropdown"></div>
     </div>
-    <div id="searchResultsArea" class="scroll-box"></div>
     <div class="field-label" id="addedLabelRow" style="display:flex;justify-content:space-between;align-items:center;">
       <span>추가된 참석자</span><span id="addedCount" style="color:var(--blue);"></span>
     </div>
     <div id="addedAttendeesArea" class="scroll-box-added"></div>
+    <div class="field-label">회의시간 · 응답 마감</div>
+    <div class="input-box" style="color:var(--text-3);">${o.duration} · ${o.deadline}</div>
+    <div class="field-label">회의 희망 기간</div>
+    <div class="input-box" style="color:var(--text-3);">${fmtDate(o.periodStart)} - ${fmtDate(o.periodEnd)}</div>
+    <div class="field-label">회의 제목</div>
+    <div class="input-box" style="color:var(--text-3);">${o.title}</div>
   `, {cta:`<button class="btn-primary" id="attNextBtn" onclick="goNext('review')">초대 내용확인</button>`});
+  updateAttendeeResultsArea();
+  const sheetBody = document.querySelector('#sheet .sheet-body');
+  if(sheetBody) sheetBody.addEventListener('click', handleAttendeesBodyClick, true);
+}
+function handleAttendeesBodyClick(e){
+  if(!e.target.closest('.attendee-search-wrap')){
+    attendeeDropdownClosed = true;
+    const area = document.getElementById('searchResultsArea');
+    if(area) area.style.display = 'none';
+  }
+}
+function reopenAttendeeDropdown(){
+  attendeeDropdownClosed = false;
   updateAttendeeResultsArea();
 }
 function handleAttendeeInput(v){
   state.organizer.search = v;
+  attendeeDropdownClosed = false;
   updateAttendeeResultsArea();
 }
 function updateAttendeeResultsArea(){
@@ -775,7 +963,10 @@ function updateAttendeeResultsArea(){
     </div>`).join('');
 
   const searchArea = document.getElementById('searchResultsArea');
-  if(searchArea) searchArea.innerHTML = resultsHtml;
+  if(searchArea){
+    searchArea.innerHTML = resultsHtml;
+    searchArea.style.display = (results.length && !attendeeDropdownClosed) ? 'block' : 'none';
+  }
   const addedArea = document.getElementById('addedAttendeesArea');
   if(addedArea) addedArea.innerHTML = addedHtml;
   const countEl = document.getElementById('addedCount');
@@ -797,7 +988,7 @@ function toggleAttendee(name, email, level){
 
 // ======================= 8) REVIEW =======================
 function renderReview(){
-  document.getElementById('sheet').style.maxHeight = '92%';
+  document.getElementById('sheet').style.maxHeight = 'min(700px, 92%)';
   const o = state.organizer;
   const rows = o.attendees.map(a=>{
     if(a.isMe){
@@ -810,7 +1001,7 @@ function renderReview(){
       <span class="name">${a.name}</span>
       <span style="display:flex; align-items:center; gap:10px;">
         <span class="tag ${a.level}" style="cursor:pointer;" onclick="toggleReviewLevel('${a.name}')">${a.level==='required'?'필수':'선택'}</span>
-        <span style="cursor:pointer; color:var(--text-3); font-size:15px; font-weight:700;" onclick="removeReviewAttendee('${a.name}')">✕</span>
+        <span style="cursor:pointer; color:var(--text-3); font-size:15px; font-weight:600;" onclick="removeReviewAttendee('${a.name}')">✕</span>
       </span>
     </div>`;
   }).join('');
@@ -844,7 +1035,8 @@ function sendInvite(){
   state.organizer.inviteSent = true;
   closeSheet();
   showToast('초대를 보냈어요', '동료들에게 알림을 보냈어요.', ()=>{
-    showToast('참석자 화면으로 전환', '실제로는 각 참석자의 화면에서 보여요.<br>참석자 입장이 되어 답변해보세요.', ()=>{
+    const o = state.organizer;
+    showToast('미팅 생성', `나연님이 ${o.title || '회의'}에 초대했어요.<br>${o.deadline}까지 답해주세요.`, ()=>{
       state.flowMode = 'demo';
       state.participant = freshParticipantState();
       openSheet('pIntro');
@@ -930,17 +1122,64 @@ function renderConfirmed(){
       <div class="confirm-date">${fmtRecFullDate(r)}<br>${r.time}</div>
       <div class="why-box">
         <div class="q">왜 이 시간인가요?</div>
-        <div class="a">${r.sub}</div>
+        <div class="a">${r.reason}</div>
       </div>
     </div>
     <p style="font-size:13px;color:var(--text-2);">선호가 반영되지 않은 참석자에게는 개인별 사유를 따로 안내해요.</p>
   `, {cta:`<button class="btn-primary" onclick="viewOnCalendar(${state.organizer.recSelected})">캘린더에서 보기</button>`});
 }
+function openEventDetail(e){
+  if(e) e.stopPropagation();
+  openSheet('eventDetail');
+}
+function renderEventDetail(){
+  document.getElementById('sheet').style.maxHeight = 'min(700px, 92%)';
+  const ev = state.calendarEvent || {};
+  const r = RECOMMEND[ev.recIdx || 0];
+  const attendeesHtml = state.organizer.attendees.map(a=>`
+    <div class="attendee-row">
+      <span class="name">${a.name}</span>
+      <span class="tag ${a.level}">${a.level==='required'?'필수':'선택'}</span>
+    </div>`).join('');
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <h1>${ev.title || '회의'}</h1>
+    <p class="desc">확정된 회의 정보예요.</p>
+    <div class="confirm-box" style="padding:16px 0 8px;">
+      <div class="confirm-date" style="font-size:20px;">${fmtRecFullDate(r)}<br>${r.time}</div>
+      <div class="why-box">
+        <div class="q">왜 이 시간인가요?</div>
+        <div class="a">${r.reason}</div>
+      </div>
+    </div>
+    <div class="field-label">참석자</div>
+    ${attendeesHtml}
+  `, {cta:`<button class="btn-primary" onclick="closeSheet()">닫기</button>`});
+}
 function viewOnCalendar(recIdx){
   const r = RECOMMEND[recIdx];
   const day = parseInt(r.date.split('/')[1], 10);
-  state.calendarEvent = {day, title: state.organizer.title || '회의'};
+  state.calendarEvent = {day, title: state.organizer.title || '회의', recIdx};
   closeSheet();
+  showToast('일정이 확정됐어요', `${fmtRecFullDate(r)} ${r.time}(으)로 회의가 확정됐어요.`, ()=>{
+    state.pConfirmedRecIdx = recIdx;
+    openSheet('pConfirmedFinal');
+  });
+}
+function renderPConfirmedFinal(){
+  document.getElementById('sheet').style.maxHeight = 'min(700px, 92%)';
+  const r = RECOMMEND[state.pConfirmedRecIdx || 0];
+  document.getElementById('sheet').innerHTML = sheetShell(`
+    <h1>일정이 확정됐어요</h1>
+    <p class="desc">참석자 입장에서 보는 확정 화면이에요.</p>
+    <div class="confirm-box">
+      <div class="confirm-date">${fmtRecFullDate(r)}<br>${r.time}</div>
+      <div class="why-box">
+        <div class="q">왜 이 시간인가요?</div>
+        <div class="a">${r.reason}</div>
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--text-2);">주최자가 확정한 시간과 사유를 참석자도 동일하게 확인할 수 있어요.</p>
+  `, {cta:`<button class="btn-primary" onclick="closeSheet()">캘린더에서 보기</button>`});
 }
 function renderAutoConfirmed(){
   document.getElementById('sheet').style.maxHeight = '65%';
